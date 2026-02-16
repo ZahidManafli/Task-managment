@@ -34,6 +34,7 @@ const Dashboard = () => {
   const [selectedStockTypeId, setSelectedStockTypeId] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [stockViewMode, setStockViewMode] = useState('grid');
+  const [documentSearch, setDocumentSearch] = useState('');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [showStockTypeForm, setShowStockTypeForm] = useState(false);
@@ -543,21 +544,51 @@ const Dashboard = () => {
 
       {activeTab === 'documents' && (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
-            <label className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-              <input
-                type="file"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              + Upload Document
-            </label>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Browse, search, and manage your uploaded files.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <div className="relative w-full sm:w-64">
+                <input
+                  type="text"
+                  value={documentSearch}
+                  onChange={(e) => setDocumentSearch(e.target.value)}
+                  placeholder="Search by name or type..."
+                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                />
+                <svg
+                  className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-4.35-4.35M11 5a6 6 0 100 12 6 6 0 000-12z"
+                  />
+                </svg>
+              </div>
+              <label className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm text-center">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                + Upload Document
+              </label>
+            </div>
           </div>
 
           <DocumentsList
             documents={documents}
+            searchTerm={documentSearch}
             onDownload={handleDownloadDocument}
             onDelete={handleDeleteDocument}
           />
