@@ -14,6 +14,7 @@ import DocumentsList from './components/documents/DocumentsList';
 import StockList from './components/stock/StockList';
 import StockTypeForm from './components/stock/StockTypeForm';
 import StockItemForm from './components/stock/StockItemForm';
+import StockDetailModal from './components/stock/StockDetailModal';
 import { TASK_STATUSES } from './utils/constants';
 // Firebase imports
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -32,12 +33,14 @@ const Dashboard = () => {
   const [stockItems, setStockItems] = useState([]);
   const [selectedStockTypeId, setSelectedStockTypeId] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [stockViewMode, setStockViewMode] = useState('grid');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [showStockTypeForm, setShowStockTypeForm] = useState(false);
   const [showStockItemForm, setShowStockItemForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
+  const [selectedStockItem, setSelectedStockItem] = useState(null);
   const { currentUser } = useAuth();
 
   // Load tasks from Firebase (all users can see all tasks)
@@ -393,6 +396,51 @@ const Dashboard = () => {
     }
   };
 
+  const handleChangeStockQuantity = async (itemId, delta) => {
+    try {
+      const item = stockItems.find((i) => i.id === itemId);
+      if (!item) return;
+
+      const currentQty = Number(item.quantity) || 0;
+      const newQty = Math.max(0, currentQty + delta);
+
+      const itemRef = doc(db, 'stockItems', itemId);
+      await updateDoc(itemRef, { quantity: newQty });
+    } catch (error) {
+      console.error('Error updating stock quantity:', error);
+    }
+  };
+
+  const handleSelectStockItem = (item) => {
+    setSelectedStockItem(item);
+  };
+
+  const handleUpdateStockItem = async (updatedItem) => {
+    try {
+      const selectedType = stockTypes.find((t) => t.id === updatedItem.typeId) || null;
+      const itemRef = doc(db, 'stockItems', updatedItem.id);
+
+      const { id, ...rest } = updatedItem;
+      await updateDoc(itemRef, {
+        ...rest,
+        typeName: selectedType ? selectedType.name : '',
+      });
+
+      setSelectedStockItem(null);
+    } catch (error) {
+      console.error('Error updating stock item:', error);
+    }
+  };
+
+  const handleDeleteStockItem = async (itemId) => {
+    try {
+      await deleteDoc(doc(db, 'stockItems', itemId));
+      setSelectedStockItem(null);
+    } catch (error) {
+      console.error('Error deleting stock item:', error);
+    }
+  };
+
   return (
     <Layout activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === 'tasks' && (
@@ -536,6 +584,87 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Stock overview */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {(() => {
+              const scopedItems =
+                selectedStockTypeId === 'all'
+                  ? stockItems
+                  : stockItems.filter((i) => i.typeId === selectedStockTypeId);
+              const totalProducts = scopedItems.length;
+              const totalQuantity = scopedItems.reduce(
+                (sum, i) => sum + (Number(i.quantity) || 0),
+                0
+              );
+              const outOfStock = scopedItems.filter(
+                (i) => (Number(i.quantity) || 0) === 0
+              ).length;
+
+              return (
+                <>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Products
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-gray-900">
+                      {totalProducts}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      In current filter
+                    </p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Total Quantity
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-gray-900">
+                      {totalQuantity}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Sum of all items
+                    </p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Out of Stock
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-red-600">
+                      {outOfStock}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Needs restock
+                    </p>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+
+          <div className="flex justify-end">
+            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setStockViewMode('grid')}
+                className={`px-4 py-2 text-sm ${
+                  stockViewMode === 'grid'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Grid
+              </button>
+              <button
+                onClick={() => setStockViewMode('list')}
+                className={`px-4 py-2 text-sm ${
+                  stockViewMode === 'list'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                List
+              </button>
+            </div>
+          </div>
+
           {/* Type filter sub-tabs */}
           <div className="flex flex-wrap gap-2">
             <button
@@ -578,7 +707,23 @@ const Dashboard = () => {
             />
           )}
 
-          <StockList items={stockItems} selectedTypeId={selectedStockTypeId} />
+          <StockList
+            items={stockItems}
+            selectedTypeId={selectedStockTypeId}
+            viewMode={stockViewMode}
+            onChangeQuantity={handleChangeStockQuantity}
+            onSelectItem={handleSelectStockItem}
+          />
+
+          {selectedStockItem && (
+            <StockDetailModal
+              item={selectedStockItem}
+              types={stockTypes}
+              onClose={() => setSelectedStockItem(null)}
+              onUpdate={handleUpdateStockItem}
+              onDelete={handleDeleteStockItem}
+            />
+          )}
         </div>
       )}
     </Layout>

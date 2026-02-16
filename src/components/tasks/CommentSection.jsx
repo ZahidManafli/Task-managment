@@ -55,7 +55,7 @@ const CommentSection = ({ comments = [], onAddComment }) => {
             <div key={index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
               <div className="flex items-start justify-between mb-1">
                 <span className="text-sm font-medium text-gray-900">
-                  {comment.userId || comment.userEmail || currentUser?.email || 'Anonymous'}
+                  {comment.userEmail || comment.userId || 'Anonymous'}
                 </span>
                 <span className="text-xs text-gray-500">
                   {formatDate(comment.timestamp)}
