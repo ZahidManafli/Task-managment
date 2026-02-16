@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [stockViewMode, setStockViewMode] = useState('grid');
   const [documentSearch, setDocumentSearch] = useState('');
+  const [taskStatusFilter, setTaskStatusFilter] = useState('all');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [showStockTypeForm, setShowStockTypeForm] = useState(false);
@@ -449,16 +450,24 @@ const Dashboard = () => {
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-900">Tasks</h2>
             <div className="flex items-center space-x-4">
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+              <div className="hidden md:flex border border-gray-300 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-4 py-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                  className={`px-4 py-2 text-sm ${
+                    viewMode === 'grid'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   Grid
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`px-4 py-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                  className={`px-4 py-2 text-sm ${
+                    viewMode === 'list'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   List
                 </button>
@@ -472,6 +481,33 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Status filter chips */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setTaskStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm border ${
+                taskStatusFilter === 'all'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              All
+            </button>
+            {TASK_STATUSES.map((status) => (
+              <button
+                key={status}
+                onClick={() => setTaskStatusFilter(status)}
+                className={`px-3 py-1.5 rounded-full text-xs sm:text-sm border ${
+                  taskStatusFilter === status
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+
           {showTaskForm && (
             <TaskCreateModal
               onSubmit={handleCreateTask}
@@ -481,7 +517,11 @@ const Dashboard = () => {
 
           {viewMode === 'grid' ? (
             <TaskGrid
-              tasks={tasks}
+              tasks={
+                taskStatusFilter === 'all'
+                  ? tasks
+                  : tasks.filter((task) => task.status === taskStatusFilter)
+              }
               onSetStatus={handleSetStatus}
               onSeeDetails={handleSeeDetails}
               onSetUser={handleSetUser}
@@ -489,7 +529,11 @@ const Dashboard = () => {
             />
           ) : (
             <TaskList
-              tasks={tasks}
+              tasks={
+                taskStatusFilter === 'all'
+                  ? tasks
+                  : tasks.filter((task) => task.status === taskStatusFilter)
+              }
               onSetStatus={handleSetStatus}
               onSeeDetails={handleSeeDetails}
               onSetUser={handleSetUser}
