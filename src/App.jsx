@@ -17,6 +17,8 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot
 import { db } from './services/firebase';
 // Supabase imports for file storage
 import { uploadFile, deleteFile, STORAGE_BUCKETS } from './services/supabase';
+// Email service
+import { sendTaskAssignmentEmail, sendStatusChangeEmail } from './services/emailService';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('tasks');
@@ -104,14 +106,26 @@ const Dashboard = () => {
       }
 
       // Save to Firebase Firestore
-      await addDoc(collection(db, 'tasks'), {
+      const taskDoc = {
         ...taskData,
         attachments: imageUrls,
         status: 'To Do',
         comments: [],
         createdAt: new Date(),
         createdBy: currentUser.email,
-      });
+      };
+      
+      await addDoc(collection(db, 'tasks'), taskDoc);
+      
+      // Send email to assigned user if task is assigned
+      if (taskData.assignedTo && taskData.assignedTo.trim() !== '') {
+        try {
+          await sendTaskAssignmentEmail(taskDoc, taskData.assignedTo);
+        } catch (error) {
+          console.error('Failed to send assignment email:', error);
+          // Don't block task creation if email fails
+        }
+      }
       
       setShowTaskForm(false);
     } catch (error) {
@@ -138,9 +152,30 @@ const Dashboard = () => {
       const finalAttachments = [...existingImages, ...uploadedImages];
       const taskWithAttachments = { ...updatedTask, attachments: finalAttachments };
 
+      // Get previous task state to detect changes
+      const previousTask = tasks.find(t => t.id === updatedTask.id);
+      const statusChanged = previousTask?.status !== taskWithAttachments.status;
+      const assignmentChanged = previousTask?.assignedTo !== taskWithAttachments.assignedTo;
+
       // Update in Firebase Firestore
       const taskRef = doc(db, 'tasks', updatedTask.id);
       await updateDoc(taskRef, taskWithAttachments);
+      
+      // Send email notifications
+      try {
+        // Only send email for STATUS change
+        if (statusChanged && previousTask) {
+          await sendStatusChangeEmail(
+            { ...previousTask, ...taskWithAttachments },
+            taskWithAttachments.status,
+            currentUser.email
+          );
+        }
+        // Note: edits/comments/assignment changes do NOT send emails (template limit)
+      } catch (error) {
+        console.error('Failed to send update email:', error);
+        // Don't block task update if email fails
+      }
       
       setSelectedTask(null);
     } catch (error) {

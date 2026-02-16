@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { PRIORITY_COLORS, STATUS_COLORS, PRIORITY_LEVELS, TASK_STATUSES } from '../../utils/constants';
 import CommentSection from './CommentSection';
 import ImageUpload from '../common/ImageUpload';
 
 const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
+  const { currentUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState(task);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -25,10 +27,12 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
   const handleAddComment = (commentText) => {
     const newComment = {
       text: commentText,
-      userId: task.createdBy,
+      userId: currentUser?.email || currentUser?.uid,
+      userEmail: currentUser?.email,
       timestamp: new Date(),
     };
     const updatedComments = [...(task.comments || []), newComment];
+    // Comment updates should NOT trigger emails (template limit), so we only save the comment.
     handleUpdate({ comments: updatedComments });
   };
 
