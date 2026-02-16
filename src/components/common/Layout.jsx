@@ -16,6 +16,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
     { id: 'tasks', label: 'Tasks' },
     { id: 'notes', label: 'Notes' },
     { id: 'documents', label: 'Documents' },
+    { id: 'stock', label: 'Stock' },
   ];
 
   return (

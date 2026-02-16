@@ -11,6 +11,9 @@ import TaskDetailModal from './components/tasks/TaskDetailModal';
 import NotesList from './components/notes/NotesList';
 import NoteCreateModal from './components/notes/NoteCreateModal';
 import DocumentsList from './components/documents/DocumentsList';
+import StockList from './components/stock/StockList';
+import StockTypeForm from './components/stock/StockTypeForm';
+import StockItemForm from './components/stock/StockItemForm';
 import { TASK_STATUSES } from './utils/constants';
 // Firebase imports
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -25,9 +28,14 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [notes, setNotes] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [stockTypes, setStockTypes] = useState([]);
+  const [stockItems, setStockItems] = useState([]);
+  const [selectedStockTypeId, setSelectedStockTypeId] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
+  const [showStockTypeForm, setShowStockTypeForm] = useState(false);
+  const [showStockItemForm, setShowStockItemForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const { currentUser } = useAuth();
@@ -83,6 +91,50 @@ const Dashboard = () => {
       console.error('Error loading documents:', error);
     });
     
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Load stock types from Firebase (all users can see all types)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const typesQuery = query(collection(db, 'stockTypes'));
+    const unsubscribe = onSnapshot(
+      typesQuery,
+      (snapshot) => {
+        const typesData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setStockTypes(typesData);
+      },
+      (error) => {
+        console.error('Error loading stock types:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Load stock items from Firebase (all users can see all items)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const itemsQuery = query(collection(db, 'stockItems'));
+    const unsubscribe = onSnapshot(
+      itemsQuery,
+      (snapshot) => {
+        const itemsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setStockItems(itemsData);
+      },
+      (error) => {
+        console.error('Error loading stock items:', error);
+      }
+    );
+
     return () => unsubscribe();
   }, [currentUser]);
 
@@ -312,6 +364,35 @@ const Dashboard = () => {
     }
   };
 
+  const handleCreateStockType = async (typeData) => {
+    try {
+      await addDoc(collection(db, 'stockTypes'), {
+        ...typeData,
+        createdAt: new Date(),
+        createdBy: currentUser.email,
+      });
+      setShowStockTypeForm(false);
+    } catch (error) {
+      console.error('Error creating stock type:', error);
+    }
+  };
+
+  const handleCreateStockItem = async (itemData) => {
+    try {
+      const selectedType = stockTypes.find((t) => t.id === itemData.typeId) || null;
+
+      await addDoc(collection(db, 'stockItems'), {
+        ...itemData,
+        typeName: selectedType ? selectedType.name : '',
+        createdAt: new Date(),
+        createdBy: currentUser.email,
+      });
+      setShowStockItemForm(false);
+    } catch (error) {
+      console.error('Error creating stock item:', error);
+    }
+  };
+
   return (
     <Layout activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === 'tasks' && (
@@ -427,13 +508,77 @@ const Dashboard = () => {
             </label>
           </div>
 
-          
-
           <DocumentsList
             documents={documents}
             onDownload={handleDownloadDocument}
             onDelete={handleDeleteDocument}
           />
+        </div>
+      )}
+
+      {activeTab === 'stock' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-900">Stock</h2>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowStockTypeForm(true)}
+                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition"
+              >
+                + Add Type
+              </button>
+              <button
+                onClick={() => setShowStockItemForm(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                + Add Product
+              </button>
+            </div>
+          </div>
+
+          {/* Type filter sub-tabs */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedStockTypeId('all')}
+              className={`px-3 py-1 rounded-full text-sm border ${
+                selectedStockTypeId === 'all'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              All
+            </button>
+            {stockTypes.map((type) => (
+              <button
+                key={type.id}
+                onClick={() => setSelectedStockTypeId(type.id)}
+                className={`px-3 py-1 rounded-full text-sm border ${
+                  selectedStockTypeId === type.id
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {type.name}
+              </button>
+            ))}
+          </div>
+
+          {showStockTypeForm && (
+            <StockTypeForm
+              onSubmit={handleCreateStockType}
+              onClose={() => setShowStockTypeForm(false)}
+            />
+          )}
+
+          {showStockItemForm && (
+            <StockItemForm
+              types={stockTypes}
+              onSubmit={handleCreateStockItem}
+              onClose={() => setShowStockItemForm(false)}
+            />
+          )}
+
+          <StockList items={stockItems} selectedTypeId={selectedStockTypeId} />
         </div>
       )}
     </Layout>
