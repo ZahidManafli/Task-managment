@@ -30,7 +30,7 @@ export const sendTaskAssignmentEmail = async (task, assignedUserEmail) => {
       task_deadline: task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline',
       task_status: task.status || 'To Do',
       created_by: task.createdBy,
-      task_url: window.location.origin + '/dashboard',
+      task_url: 'https://urc-it.netlify.app',
     };
 
     const response = await emailjs.send(
