@@ -51,15 +51,18 @@ export const sendTaskAssignmentEmail = async (task, assignedUserEmail) => {
  */
 export const sendStatusChangeEmail = async (task, newStatus, changedByEmail) => {
   // Send to creator if status changed by assigned user
-  if (task.createdBy && task.createdBy !== changedByEmail) {
+  // also if creator change status then send to assigned user
+  if (task.createdBy && task.createdBy !== changedByEmail || task.assignedTo && task.assignedTo !== changedByEmail) {
     try {
+      // if assigned to is not the same as changed by email then send to assigned user
+      const toEmail = task.assignedTo && task.assignedTo !== changedByEmail ? task.assignedTo : task.createdBy;
       const templateParams = {
-        to_email: task.createdBy,
+        to_email: toEmail,
         task_headline: task.headline,
         old_status: task.status,
         new_status: newStatus,
         changed_by: changedByEmail,
-        task_url: window.location.origin + '/dashboard',
+        task_url: 'https://urc-it.netlify.app',
       };
 
       const response = await emailjs.send(
