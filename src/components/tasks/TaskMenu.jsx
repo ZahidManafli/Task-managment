@@ -39,28 +39,10 @@ const TaskMenu = ({ onSetStatus, onSeeDetails, onSetUser, onAddCommentary }) => 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
           <button
-            onClick={() => handleMenuClick(onSetStatus)}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            Set Status
-          </button>
-          <button
             onClick={() => handleMenuClick(onSeeDetails)}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             See Details
-          </button>
-          <button
-            onClick={() => handleMenuClick(onSetUser)}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            Set User
-          </button>
-          <button
-            onClick={() => handleMenuClick(onAddCommentary)}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            Add Commentary
           </button>
         </div>
       )}
