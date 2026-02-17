@@ -685,12 +685,14 @@ const Dashboard = () => {
               const outOfStock = scopedItems.filter(
                 (i) => (Number(i.quantity) || 0) === 0
               ).length;
-              const available = scopedItems.filter(
-                (i) => i.available !== false
-              ).length;
-              const notAvailable = scopedItems.filter(
-                (i) => i.available === false
-              ).length;
+              // Calculate available quantity (sum of quantities, not count of items)
+              const available = scopedItems
+                .filter((i) => i.available !== false)
+                .reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+              // Calculate not available quantity (sum of quantities, not count of items)
+              const notAvailable = scopedItems
+                .filter((i) => i.available === false)
+                .reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
 
               return (
                 <>
