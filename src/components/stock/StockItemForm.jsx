@@ -8,6 +8,7 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
   const [quantity, setQuantity] = useState(1);
   const [properties, setProperties] = useState([emptyProperty]);
   const [note, setNote] = useState('');
+  const [available, setAvailable] = useState(true);
 
   const handlePropertyChange = (index, field, value) => {
     setProperties((prev) => {
@@ -44,6 +45,7 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
       quantity: Number(quantity) || 0,
       properties: propertiesMap,
       note: note.trim(),
+      available: available,
     });
 
     setName('');
@@ -51,6 +53,7 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
     setQuantity(1);
     setProperties([emptyProperty]);
     setNote('');
+    setAvailable(true);
   };
 
   return (
@@ -116,6 +119,20 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Availability *
+              </label>
+              <select
+                value={available ? 'available' : 'not_available'}
+                onChange={(e) => setAvailable(e.target.value === 'available')}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              >
+                <option value="available">Available</option>
+                <option value="not_available">Not Available</option>
+              </select>
             </div>
           </div>
 

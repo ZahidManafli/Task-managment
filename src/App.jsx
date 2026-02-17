@@ -32,6 +32,7 @@ const Dashboard = () => {
   const [stockTypes, setStockTypes] = useState([]);
   const [stockItems, setStockItems] = useState([]);
   const [selectedStockTypeId, setSelectedStockTypeId] = useState('all');
+  const [selectedStockAvailability, setSelectedStockAvailability] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [stockViewMode, setStockViewMode] = useState('grid');
   const [documentSearch, setDocumentSearch] = useState('');
@@ -139,7 +140,7 @@ const Dashboard = () => {
         console.error('Error loading stock items:', error);
       }
     );
-
+    
     return () => unsubscribe();
   }, [currentUser]);
 
@@ -590,7 +591,7 @@ const Dashboard = () => {
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
               <p className="text-sm text-gray-500 mt-1">
                 Browse, search, and manage your uploaded files.
               </p>
@@ -619,15 +620,15 @@ const Dashboard = () => {
                 </svg>
               </div>
               <label className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm text-center">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                + Upload Document
-              </label>
-            </div>
+              <input
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              + Upload Document
+            </label>
+          </div>
           </div>
 
           <DocumentsList
@@ -660,12 +661,22 @@ const Dashboard = () => {
           </div>
 
           {/* Stock overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {(() => {
-              const scopedItems =
+              // Apply type filter
+              let scopedItems =
                 selectedStockTypeId === 'all'
                   ? stockItems
                   : stockItems.filter((i) => i.typeId === selectedStockTypeId);
+              
+              // Apply availability filter
+              if (selectedStockAvailability !== 'all') {
+                const isAvailable = selectedStockAvailability === 'available';
+                scopedItems = scopedItems.filter(
+                  (i) => (i.available !== false) === isAvailable
+                );
+              }
+
               const totalProducts = scopedItems.length;
               const totalQuantity = scopedItems.reduce(
                 (sum, i) => sum + (Number(i.quantity) || 0),
@@ -673,6 +684,12 @@ const Dashboard = () => {
               );
               const outOfStock = scopedItems.filter(
                 (i) => (Number(i.quantity) || 0) === 0
+              ).length;
+              const available = scopedItems.filter(
+                (i) => i.available !== false
+              ).length;
+              const notAvailable = scopedItems.filter(
+                (i) => i.available === false
               ).length;
 
               return (
@@ -697,6 +714,28 @@ const Dashboard = () => {
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
                       Sum of all items
+                    </p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Available
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-green-600">
+                      {available}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Available products
+                    </p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Not Available
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-red-600">
+                      {notAvailable}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Not available products
                     </p>
                   </div>
                   <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -741,30 +780,66 @@ const Dashboard = () => {
           </div>
 
           {/* Type filter sub-tabs */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedStockTypeId('all')}
-              className={`px-3 py-1 rounded-full text-sm border ${
-                selectedStockTypeId === 'all'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              All
-            </button>
-            {stockTypes.map((type) => (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-700 self-center">Type:</span>
               <button
-                key={type.id}
-                onClick={() => setSelectedStockTypeId(type.id)}
+                onClick={() => setSelectedStockTypeId('all')}
                 className={`px-3 py-1 rounded-full text-sm border ${
-                  selectedStockTypeId === type.id
+                  selectedStockTypeId === 'all'
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                {type.name}
+                All
               </button>
-            ))}
+              {stockTypes.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedStockTypeId(type.id)}
+                  className={`px-3 py-1 rounded-full text-sm border ${
+                    selectedStockTypeId === type.id
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {type.name}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-700 self-center">Availability:</span>
+              <button
+                onClick={() => setSelectedStockAvailability('all')}
+                className={`px-3 py-1 rounded-full text-sm border ${
+                  selectedStockAvailability === 'all'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setSelectedStockAvailability('available')}
+                className={`px-3 py-1 rounded-full text-sm border ${
+                  selectedStockAvailability === 'available'
+                    ? 'bg-green-600 text-white border-green-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Available
+              </button>
+              <button
+                onClick={() => setSelectedStockAvailability('not_available')}
+                className={`px-3 py-1 rounded-full text-sm border ${
+                  selectedStockAvailability === 'not_available'
+                    ? 'bg-red-600 text-white border-red-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Not Available
+              </button>
+            </div>
           </div>
 
           {showStockTypeForm && (
@@ -785,6 +860,7 @@ const Dashboard = () => {
           <StockList
             items={stockItems}
             selectedTypeId={selectedStockTypeId}
+            selectedAvailability={selectedStockAvailability}
             viewMode={stockViewMode}
             onChangeQuantity={handleChangeStockQuantity}
             onSelectItem={handleSelectStockItem}
