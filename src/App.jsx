@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [selectedStockAvailability, setSelectedStockAvailability] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [stockViewMode, setStockViewMode] = useState('grid');
+  const [stockSearch, setStockSearch] = useState('');
   const [documentSearch, setDocumentSearch] = useState('');
   const [taskStatusFilter, setTaskStatusFilter] = useState('all');
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -756,28 +757,52 @@ const Dashboard = () => {
             })()}
           </div>
 
-          <div className="flex justify-end">
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setStockViewMode('grid')}
-                className={`px-4 py-2 text-sm ${
-                  stockViewMode === 'grid'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                value={stockSearch}
+                onChange={(e) => setStockSearch(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+              <svg
+                className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                Grid
-              </button>
-              <button
-                onClick={() => setStockViewMode('list')}
-                className={`px-4 py-2 text-sm ${
-                  stockViewMode === 'list'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                List
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-4.35-4.35M11 5a6 6 0 100 12 6 6 0 000-12z"
+                />
+              </svg>
+            </div>
+            <div className="flex justify-end">
+              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setStockViewMode('grid')}
+                  className={`px-4 py-2 text-sm ${
+                    stockViewMode === 'grid'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Grid
+                </button>
+                <button
+                  onClick={() => setStockViewMode('list')}
+                  className={`px-4 py-2 text-sm ${
+                    stockViewMode === 'list'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  List
+                </button>
+              </div>
             </div>
           </div>
 
@@ -863,6 +888,7 @@ const Dashboard = () => {
             items={stockItems}
             selectedTypeId={selectedStockTypeId}
             selectedAvailability={selectedStockAvailability}
+            searchTerm={stockSearch}
             viewMode={stockViewMode}
             onChangeQuantity={handleChangeStockQuantity}
             onSelectItem={handleSelectStockItem}

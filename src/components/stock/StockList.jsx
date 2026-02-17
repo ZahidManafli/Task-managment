@@ -2,6 +2,7 @@ const StockList = ({
   items,
   selectedTypeId,
   selectedAvailability = 'all',
+  searchTerm = '',
   viewMode = 'grid',
   onChangeQuantity,
   onSelectItem,
@@ -17,6 +18,29 @@ const StockList = ({
     filteredItems = filteredItems.filter(
       (item) => (item.available !== false) === isAvailable
     );
+  }
+
+  // Apply text search filter
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  if (normalizedSearch) {
+    filteredItems = filteredItems.filter((item) => {
+      const name = item.name?.toLowerCase() || '';
+      const typeName = item.typeName?.toLowerCase() || '';
+      const note = item.note?.toLowerCase() || '';
+      const propertiesText = item.properties
+        ? Object.entries(item.properties)
+            .map(([key, value]) => `${key} ${value}`)
+            .join(' ')
+            .toLowerCase()
+        : '';
+
+      return (
+        name.includes(normalizedSearch) ||
+        typeName.includes(normalizedSearch) ||
+        note.includes(normalizedSearch) ||
+        propertiesText.includes(normalizedSearch)
+      );
+    });
   }
 
   if (filteredItems.length === 0) {

@@ -36,6 +36,18 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
     handleUpdate({ comments: updatedComments });
   };
 
+  const handleUpdateComment = (index, newText) => {
+    const existingComments = task.comments || [];
+    if (!existingComments[index]) return;
+
+    const updatedComments = existingComments.map((comment, i) =>
+      i === index ? { ...comment, text: newText } : comment
+    );
+
+    // Comment updates should NOT trigger emails
+    handleUpdate({ comments: updatedComments });
+  };
+
   const handleImageUpdate = (images) => {
     handleUpdate({ attachments: images });
   };
@@ -110,7 +122,11 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
                 </div>
               )}
 
-              <CommentSection comments={task.comments || []} onAddComment={handleAddComment} />
+              <CommentSection
+                comments={task.comments || []}
+                onAddComment={handleAddComment}
+                onUpdateComment={handleUpdateComment}
+              />
 
               <div className="flex space-x-4 pt-4 border-t border-gray-200">
                 <button
