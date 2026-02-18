@@ -909,68 +909,169 @@ const Dashboard = () => {
 
               return (
                 <>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Products
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-gray-900">
-                      {totalProducts}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      In current filter
-                    </p>
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-4 shadow-sm">
+                    <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-blue-50 opacity-60" />
+                    <div className="flex items-center justify-between relative z-10">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                          Products
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold text-slate-900">
+                          {totalProducts}
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          In current filter
+                        </p>
+                      </div>
+                      <div className="w-9 h-9 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.8}
+                            d="M3 12l2-2 4 4L19 4l2 2-12 12-6-6z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Total Quantity
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-gray-900">
-                      {totalQuantity}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Sum of all items
-                    </p>
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-slate-100 p-4 shadow-sm">
+                    <div className="absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-violet-50 opacity-60" />
+                    <div className="flex items-center justify-between relative z-10">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                          Total Quantity
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold text-slate-900">
+                          {totalQuantity}
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Sum of all items
+                        </p>
+                      </div>
+                      <div className="w-9 h-9 rounded-xl bg-violet-500 text-white flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.8}
+                            d="M4 6h16M4 12h10M4 18h6"
+                          />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Available
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-green-600">
-                      {available}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Available products
-                    </p>
+                  <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-4 shadow-sm">
+                    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-emerald-50 opacity-70" />
+                    <div className="flex items-center justify-between relative z-10">
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                          Available
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold text-emerald-700">
+                          {available}
+                        </p>
+                        <p className="text-[11px] text-emerald-700/70 mt-1">
+                          Total available quantity
+                        </p>
+                      </div>
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.8}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Not Available
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-red-600">
-                      {notAvailable}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Not available products
-                    </p>
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-slate-50 p-4 shadow-sm">
+                    <div className="absolute -right-10 -bottom-10 w-28 h-28 rounded-full bg-amber-50 opacity-70" />
+                    <div className="flex items-center justify-between relative z-10">
+                      <div>
+                        <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                          Not Available
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold text-amber-700">
+                          {notAvailable}
+                        </p>
+                        <p className="text-[11px] text-amber-700/70 mt-1">
+                          Blocked / not usable quantity
+                        </p>
+                      </div>
+                      <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.8}
+                            d="M12 9v4m0 4h.01M10.29 3.86L3.82 16a1.6 1.6 0 001.4 2.35h13.56a1.6 1.6 0 001.4-2.35L13.71 3.86a1.6 1.6 0 00-2.82 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Out of Stock
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-red-600">
-                      {outOfStock}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Needs restock
-                    </p>
+                  <div className="relative overflow-hidden rounded-2xl border border-red-100 bg-gradient-to-br from-red-50 via-white to-slate-50 p-4 shadow-sm">
+                    <div className="absolute -left-8 -bottom-8 w-24 h-24 rounded-full bg-red-50 opacity-70" />
+                    <div className="flex items-center justify-between relative z-10">
+                      <div>
+                        <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">
+                          Out of Stock
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold text-red-700">
+                          {outOfStock}
+                        </p>
+                        <p className="text-[11px] text-red-700/70 mt-1">
+                          Products that need restock
+                        </p>
+                      </div>
+                      <div className="w-9 h-9 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.8}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </>
               );
             })()}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="relative w-full sm:w-64">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Search */}
+            <div className="relative w-full lg:w-72">
               <input
                 type="text"
                 value={stockSearch}
@@ -992,24 +1093,25 @@ const Dashboard = () => {
                 />
               </svg>
             </div>
-            <div className="flex justify-end">
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            {/* View toggle */}
+            <div className="flex justify-start lg:justify-end">
+              <div className="inline-flex border border-gray-200 rounded-full overflow-hidden bg-white shadow-sm">
                 <button
                   onClick={() => setStockViewMode('grid')}
-                  className={`px-4 py-2 text-sm ${
+                  className={`px-4 py-2 text-sm font-medium ${
                     stockViewMode === 'grid'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      : 'bg-transparent text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   Grid
                 </button>
                 <button
                   onClick={() => setStockViewMode('list')}
-                  className={`px-4 py-2 text-sm ${
+                  className={`px-4 py-2 text-sm font-medium ${
                     stockViewMode === 'list'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      : 'bg-transparent text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   List
@@ -1018,66 +1120,38 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Type filter sub-tabs */}
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm font-medium text-gray-700 self-center">Type:</span>
-              <button
-                onClick={() => setSelectedStockTypeId('all')}
-                className={`px-3 py-1 rounded-full text-sm border ${
-                  selectedStockTypeId === 'all'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+          {/* Filters using select inputs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Type
+              </label>
+              <select
+                value={selectedStockTypeId}
+                onChange={(e) => setSelectedStockTypeId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               >
-                All
-              </button>
-              {stockTypes.map((type) => (
-                <button
-                  key={type.id}
-                  onClick={() => setSelectedStockTypeId(type.id)}
-                  className={`px-3 py-1 rounded-full text-sm border ${
-                    selectedStockTypeId === type.id
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {type.name}
-                </button>
-              ))}
+                <option value="all">All types</option>
+                {stockTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm font-medium text-gray-700 self-center">Availability:</span>
-              <button
-                onClick={() => setSelectedStockAvailability('all')}
-                className={`px-3 py-1 rounded-full text-sm border ${
-                  selectedStockAvailability === 'all'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Availability
+              </label>
+              <select
+                value={selectedStockAvailability}
+                onChange={(e) => setSelectedStockAvailability(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               >
-                All
-              </button>
-              <button
-                onClick={() => setSelectedStockAvailability('available')}
-                className={`px-3 py-1 rounded-full text-sm border ${
-                  selectedStockAvailability === 'available'
-                    ? 'bg-green-600 text-white border-green-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Available
-              </button>
-              <button
-                onClick={() => setSelectedStockAvailability('not_available')}
-                className={`px-3 py-1 rounded-full text-sm border ${
-                  selectedStockAvailability === 'not_available'
-                    ? 'bg-red-600 text-white border-red-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Not Available
-              </button>
+                <option value="all">All</option>
+                <option value="available">Available</option>
+                <option value="not_available">Not Available</option>
+              </select>
             </div>
           </div>
 

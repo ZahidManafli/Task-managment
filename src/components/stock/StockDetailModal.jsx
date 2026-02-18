@@ -2,6 +2,86 @@ import { useEffect, useState } from 'react';
 
 const emptyProperty = { key: '', value: '' };
 
+// Simple icon mapping based on type name (kept in sync with StockList visuals)
+const getTypeIcon = (typeNameRaw) => {
+  const typeName = (typeNameRaw || '').toLowerCase();
+
+  if (typeName.includes('printer')) {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M7 8V4h10v4M7 16h10v4H7v-4zM6 12h12a2 2 0 012 2v2H4v-2a2 2 0 012-2z"
+        />
+      </svg>
+    );
+  }
+
+  if (typeName.includes('kompüter') || typeName.includes('computer') || typeName.includes('pc')) {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="12" rx="2" ry="2" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeWidth={1.8} d="M8 20h8M12 16v4" />
+      </svg>
+    );
+  }
+
+  if (typeName.includes('laptop') || typeName.includes('noutbuk') || typeName.includes('notebook')) {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M4 6h16v8H4V6zM3 18h18"
+        />
+      </svg>
+    );
+  }
+
+  if (typeName.includes('led ekran') || typeName.includes('monitor') || typeName.includes('ekran')) {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="12" rx="2" ry="2" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeWidth={1.8} d="M8 19h8" />
+      </svg>
+    );
+  }
+
+  if (typeName.includes('maus') || typeName.includes('mouse')) {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <rect x="8" y="3" width="8" height="18" rx="4" ry="4" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeWidth={1.6} d="M12 7V4.5" />
+      </svg>
+    );
+  }
+
+  if (typeName.includes('klaviatur') || typeName.includes('keyboard')) {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <rect x="3" y="7" width="18" height="10" rx="2" ry="2" strokeWidth={1.8} />
+        <path strokeWidth={1.4} d="M7 10h1M10 10h1M13 10h1M16 10h1M7 13h1M10 13h4M16 13h1" />
+      </svg>
+    );
+  }
+
+  if (typeName.includes('telefon') || typeName.includes('phone')) {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <rect x="8" y="2" width="8" height="20" rx="2" ry="2" strokeWidth={1.8} />
+        <circle cx="12" cy="18" r="0.6" />
+      </svg>
+    );
+  }
+
+  // Fallback: first letter
+  const letter = (typeNameRaw || '?').charAt(0).toUpperCase();
+  return <span className="text-sm font-semibold text-blue-600">{letter}</span>;
+};
+
 const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
   const [name, setName] = useState('');
   const [typeId, setTypeId] = useState('');
@@ -101,116 +181,174 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
 
   if (!item) return null;
 
+  const currentType = types?.find((t) => t.id === (item.typeId || typeId)) || null;
+  const shelfRow = currentType?.row;
+  const shelfCol = currentType?.col;
+  const hasShelfLocation = shelfRow != null && shelfCol != null;
+  const shelfLocationText = hasShelfLocation
+    ? `Sıra ${shelfRow}, Sütun ${shelfCol}`
+    : 'Təyin edilməyib';
+
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-white/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Product Details</h2>
-            <p className="text-xs text-gray-500 mt-1">
-              ID: <span className="font-mono">{item.id}</span>
-            </p>
+    <div className="fixed inset-0 backdrop-blur-sm bg-slate-900/15 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-100">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-semibold shadow-sm">
+              {getTypeIcon(currentType?.name || item.typeName || item.name)}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xl font-semibold text-slate-900 truncate">
+                {item.name || 'Product Details'}
+              </h2>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                ID: <span className="font-mono">{item.id}</span>
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
+            className="text-slate-400 hover:text-slate-600 transition rounded-full p-1 hover:bg-slate-100"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         <div className="px-6 pt-4 pb-6 space-y-6">
-          {/* Meta info */}
+          {/* Meta info row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                 Created By
               </p>
-              <p className="mt-1 text-gray-900">{item.createdBy || '-'}</p>
+              <p className="mt-1 text-slate-900 truncate">{item.createdBy || '-'}</p>
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                 Created At
               </p>
-              <p className="mt-1 text-gray-900">
+              <p className="mt-1 text-slate-900">
                 {formatDateTime(item.createdAt)}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                 Type
               </p>
-              <p className="mt-1 text-gray-900">{item.typeName || '-'}</p>
+              <p className="mt-1 text-slate-900">{item.typeName || '-'}</p>
             </div>
           </div>
 
           {/* View / edit content */}
           {!isEditing ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <div className="space-y-6">
+              {/* Overview row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-xs">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                     Product name
                   </p>
-                  <p className="mt-1 text-gray-900">{item.name}</p>
+                  <p className="mt-1 text-slate-900 text-sm">{item.name}</p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <div className="rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-xs">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                     Quantity
                   </p>
-                  <p className="mt-1 text-gray-900">{item.quantity ?? 0}</p>
+                  <p className="mt-1 text-slate-900 text-sm">{item.quantity ?? 0}</p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <div className="rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-xs">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
                     Availability
                   </p>
-                  <p className="mt-1 text-gray-900">
+                  <div
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
+                      item.available !== false
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                        item.available !== false ? 'bg-emerald-500' : 'bg-red-500'
+                      }`}
+                    />
                     {item.available !== false ? 'Available' : 'Not Available'}
+                  </div>
+                  <p className="mt-2 text-[11px] text-slate-600">
+                    <span className="font-semibold">Rəfdəki yeri:</span> {shelfLocationText}
                   </p>
                 </div>
               </div>
 
-              {properties.length > 0 && properties[0].key && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              {/* Properties & note */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
                     Properties
                   </p>
-                  <ul className="text-sm text-gray-700 space-y-0.5">
-                    {properties.map((prop, index) => (
-                      <li key={`${prop.key}-${index}`}>
-                        <span className="font-medium">{prop.key}:</span> {prop.value}
-                      </li>
-                    ))}
-                  </ul>
+                  {properties.length > 0 && properties[0].key ? (
+                    <ul className="flex flex-wrap gap-1.5 text-[11px] text-slate-700">
+                      {properties.map((prop, index) => (
+                        <li
+                          key={`${prop.key}-${index}`}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-slate-200 shadow-xs max-w-full"
+                        >
+                          <span className="font-semibold mr-1 truncate">{prop.key}:</span>
+                          <span className="truncate">{prop.value}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-slate-400">No properties defined.</p>
+                  )}
                 </div>
-              )}
-
-              {note && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
                     Note
                   </p>
-                  <p className="text-sm text-gray-700 whitespace-pre-line">{note}</p>
+                  {note ? (
+                    <p className="text-xs text-slate-700 whitespace-pre-line max-h-32 overflow-y-auto">
+                      {note}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400">No note added.</p>
+                  )}
                 </div>
-              )}
+              </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-4">
+              {/* Footer actions */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-3 border-t border-slate-200 mt-2">
                 {onDelete && (
                   <button
                     type="button"
                     onClick={() => onDelete(item.id)}
-                    className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 text-sm"
+                    className="inline-flex items-center px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 text-xs font-medium border border-red-100"
                   >
+                    <svg
+                      className="w-4 h-4 mr-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.8}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                     Delete Product
                   </button>
                 )}
-                <div className="flex justify-end space-x-4 ml-auto">
+                <div className="flex justify-end gap-2 md:ml-auto">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm"
+                    className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition text-sm"
                   >
                     Close
                   </button>
