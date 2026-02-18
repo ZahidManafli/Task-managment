@@ -49,7 +49,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
-          Task Management
+          URC IT System
         </h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
