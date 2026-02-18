@@ -4,7 +4,7 @@ import { PRIORITY_COLORS, STATUS_COLORS, PRIORITY_LEVELS, TASK_STATUSES } from '
 import CommentSection from './CommentSection';
 import ImageUpload from '../common/ImageUpload';
 
-const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
+const TaskDetailModal = ({ task, onClose, onUpdate, onDelete, users = [] }) => {
   const { currentUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState(task);
@@ -206,13 +206,25 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
-                <input
-                  type="email"
+                <select
                   value={editedTask.assignedTo || ''}
-                  onChange={(e) => setEditedTask({ ...editedTask, assignedTo: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  placeholder="user@example.com"
-                />
+                  onChange={(e) =>
+                    setEditedTask({ ...editedTask, assignedTo: e.target.value || null })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                >
+                  <option value="">Unassigned</option>
+                  {users.map((u) => {
+                    const email = u.email || u.id;
+                    const label = u.name ? `${u.name} (${email})` : email;
+                    if (!email) return null;
+                    return (
+                      <option key={email} value={email}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
               <div className="mb-4">
                 <ImageUpload onImageSelect={handleImageUpdate} existingImages={task.attachments || []} />

@@ -1,6 +1,6 @@
 import TaskForm from './TaskForm';
 
-const TaskCreateModal = ({ onClose, onSubmit }) => {
+const TaskCreateModal = ({ onClose, onSubmit, users = [] }) => {
   const handleSubmit = (taskData) => {
     onSubmit(taskData);
     onClose();
@@ -25,6 +25,7 @@ const TaskCreateModal = ({ onClose, onSubmit }) => {
           <TaskForm
             onSubmit={handleSubmit}
             onCancel={onClose}
+            users={users}
           />
         </div>
       </div>

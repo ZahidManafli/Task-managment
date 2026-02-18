@@ -27,6 +27,7 @@ import { sendTaskAssignmentEmail, sendStatusChangeEmail } from './services/email
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('tasks');
   const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [stockTypes, setStockTypes] = useState([]);
@@ -101,6 +102,37 @@ const Dashboard = () => {
       console.error('Error loading documents:', error);
     });
     
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Load users from Firebase (used for assigning tasks)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const usersQuery = query(collection(db, 'users'));
+    const unsubscribe = onSnapshot(
+      usersQuery,
+      (snapshot) => {
+        const usersData = snapshot.docs.map((d) => {
+          const data = d.data() || {};
+          return {
+            id: d.id,
+            ...data,
+            email: data.email || d.id,
+          };
+        });
+
+        usersData.sort((a, b) =>
+          (a.name || a.email || '').localeCompare(b.name || b.email || '')
+        );
+
+        setUsers(usersData);
+      },
+      (error) => {
+        console.error('Error loading users:', error);
+      }
+    );
+
     return () => unsubscribe();
   }, [currentUser]);
 
@@ -571,6 +603,7 @@ const Dashboard = () => {
             <TaskCreateModal
               onSubmit={handleCreateTask}
               onClose={() => setShowTaskForm(false)}
+              users={users}
             />
           )}
 
@@ -638,6 +671,7 @@ const Dashboard = () => {
               onClose={() => setSelectedTask(null)}
               onUpdate={handleUpdateTask}
               onDelete={isAdmin ? handleDeleteTask : null}
+              users={users}
             />
           )}
         </div>
