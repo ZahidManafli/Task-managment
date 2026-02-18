@@ -1,8 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const StockTypeForm = ({ onSubmit, onClose }) => {
+const StockTypeForm = ({ onSubmit, onClose, initialData }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [row, setRow] = useState('');
+  const [col, setCol] = useState('');
+
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name || '');
+      setDescription(initialData.description || '');
+      setRow(initialData.row || '');
+      setCol(initialData.col || '');
+    }
+  }, [initialData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -11,17 +22,21 @@ const StockTypeForm = ({ onSubmit, onClose }) => {
     onSubmit({
       name: name.trim(),
       description: description.trim() || null,
+      row: row ? Number(row) : null,
+      col: col || null,
     });
 
     setName('');
     setDescription('');
+    setRow('');
+    setCol('');
   };
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">Add Stock Type</h2>
+          <h2 className="text-xl font-bold text-gray-900">{initialData ? 'Edit Stock Type' : 'Add Stock Type'}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition"
@@ -57,6 +72,43 @@ const StockTypeForm = ({ onSubmit, onClose }) => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               placeholder="Optional description for this type"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Row (1-5)
+              </label>
+              <select
+                value={row}
+                onChange={(e) => setRow(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              >
+                <option value="">None</option>
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Column (A-C)
+              </label>
+              <select
+                value={col}
+                onChange={(e) => setCol(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              >
+                <option value="">None</option>
+                {['A', 'B', 'C'].map((letter) => (
+                  <option key={letter} value={letter}>
+                    {letter}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-4">

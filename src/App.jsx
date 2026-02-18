@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [stockSearch, setStockSearch] = useState('');
   const [documentSearch, setDocumentSearch] = useState('');
   const [taskStatusFilter, setTaskStatusFilter] = useState('all');
+  const [taskViewFilter, setTaskViewFilter] = useState('assigned');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [showStockTypeForm, setShowStockTypeForm] = useState(false);
@@ -45,7 +46,9 @@ const Dashboard = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [selectedStockItem, setSelectedStockItem] = useState(null);
-  const { currentUser } = useAuth();
+  const [showTypesManagement, setShowTypesManagement] = useState(false);
+  const [editingStockType, setEditingStockType] = useState(null);
+  const { currentUser, isAdmin } = useAuth();
 
   // Load tasks from Firebase (all users can see all tasks)
   useEffect(() => {
@@ -373,14 +376,25 @@ const Dashboard = () => {
 
   const handleCreateStockType = async (typeData) => {
     try {
-      await addDoc(collection(db, 'stockTypes'), {
-        ...typeData,
-        createdAt: new Date(),
-        createdBy: currentUser.email,
-      });
+      if (editingStockType) {
+        // Update existing type
+        const typeRef = doc(db, 'stockTypes', editingStockType.id);
+        await updateDoc(typeRef, {
+          ...typeData,
+          updatedAt: new Date(),
+        });
+        setEditingStockType(null);
+      } else {
+        // Create new type
+        await addDoc(collection(db, 'stockTypes'), {
+          ...typeData,
+          createdAt: new Date(),
+          createdBy: currentUser.email,
+        });
+      }
       setShowStockTypeForm(false);
     } catch (error) {
-      console.error('Error creating stock type:', error);
+      console.error('Error creating/updating stock type:', error);
     }
   };
 
@@ -445,6 +459,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleUpdateStockType = async (typeId, updatedData) => {
+    try {
+      const typeRef = doc(db, 'stockTypes', typeId);
+      await updateDoc(typeRef, updatedData);
+    } catch (error) {
+      console.error('Error updating stock type:', error);
+    }
+  };
+
+  const handleDeleteStockType = async (typeId) => {
+    try {
+      await deleteDoc(doc(db, 'stockTypes', typeId));
+    } catch (error) {
+      console.error('Error deleting stock type:', error);
+    }
+  };
+
   return (
     <Layout activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === 'tasks' && (
@@ -483,6 +514,32 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Task view sub-tabs: Assigned / Sent */}
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8">
+              <button
+                onClick={() => setTaskViewFilter('assigned')}
+                className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+                  taskViewFilter === 'assigned'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Assigned
+              </button>
+              <button
+                onClick={() => setTaskViewFilter('sent')}
+                className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+                  taskViewFilter === 'sent'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Sent
+              </button>
+            </nav>
+          </div>
+
           {/* Status filter chips */}
           <div className="flex flex-wrap gap-2">
             <button
@@ -519,11 +576,27 @@ const Dashboard = () => {
 
           {viewMode === 'grid' ? (
             <TaskGrid
-              tasks={
-                taskStatusFilter === 'all'
-                  ? tasks
-                  : tasks.filter((task) => task.status === taskStatusFilter)
-              }
+              tasks={(() => {
+                // First filter by view (assigned/sent) - users can only see their own tasks
+                let filteredTasks = tasks.filter((task) => {
+                  if (taskViewFilter === 'assigned') {
+                    // Show tasks assigned to current user
+                    return task.assignedTo === currentUser?.email;
+                  } else {
+                    // Show tasks created/sent by current user
+                    return task.createdBy === currentUser?.email;
+                  }
+                });
+
+                // Then filter by status
+                if (taskStatusFilter !== 'all') {
+                  filteredTasks = filteredTasks.filter(
+                    (task) => task.status === taskStatusFilter
+                  );
+                }
+
+                return filteredTasks;
+              })()}
               onSetStatus={handleSetStatus}
               onSeeDetails={handleSeeDetails}
               onSetUser={handleSetUser}
@@ -531,11 +604,27 @@ const Dashboard = () => {
             />
           ) : (
             <TaskList
-              tasks={
-                taskStatusFilter === 'all'
-                  ? tasks
-                  : tasks.filter((task) => task.status === taskStatusFilter)
-              }
+              tasks={(() => {
+                // First filter by view (assigned/sent) - users can only see their own tasks
+                let filteredTasks = tasks.filter((task) => {
+                  if (taskViewFilter === 'assigned') {
+                    // Show tasks assigned to current user
+                    return task.assignedTo === currentUser?.email;
+                  } else {
+                    // Show tasks created/sent by current user
+                    return task.createdBy === currentUser?.email;
+                  }
+                });
+
+                // Then filter by status
+                if (taskStatusFilter !== 'all') {
+                  filteredTasks = filteredTasks.filter(
+                    (task) => task.status === taskStatusFilter
+                  );
+                }
+
+                return filteredTasks;
+              })()}
               onSetStatus={handleSetStatus}
               onSeeDetails={handleSeeDetails}
               onSetUser={handleSetUser}
@@ -548,7 +637,7 @@ const Dashboard = () => {
               task={selectedTask}
               onClose={() => setSelectedTask(null)}
               onUpdate={handleUpdateTask}
-              onDelete={handleDeleteTask}
+              onDelete={isAdmin ? handleDeleteTask : null}
             />
           )}
         </div>
@@ -646,8 +735,19 @@ const Dashboard = () => {
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-900">Stock</h2>
             <div className="flex items-center space-x-4">
+              {isAdmin && (
+                <button
+                  onClick={() => setShowTypesManagement(true)}
+                  className="px-4 py-2 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition"
+                >
+                  Manage Types
+                </button>
+              )}
               <button
-                onClick={() => setShowStockTypeForm(true)}
+                onClick={() => {
+                  setEditingStockType(null);
+                  setShowStockTypeForm(true);
+                }}
                 className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition"
               >
                 + Add Type
@@ -660,6 +760,84 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
+
+          {/* Admin-only Types Management Modal */}
+          {isAdmin && showTypesManagement && (
+            <div className="fixed inset-0 z-[60] p-4 flex items-center justify-center">
+              <div
+                className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                onClick={() => setShowTypesManagement(false)}
+              />
+              <div className="relative bg-white w-full max-w-2xl rounded-xl shadow-xl border border-gray-200 max-h-[85vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Manage Stock Types</h3>
+                  <button
+                    onClick={() => setShowTypesManagement(false)}
+                    className="text-gray-400 hover:text-gray-600 transition"
+                    aria-label="Close"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-3">
+                  {stockTypes.map((type) => (
+                    <div
+                      key={type.id}
+                      className="flex items-center justify-between gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="font-medium text-gray-900 truncate">{type.name}</span>
+                          {type.row && type.col && (
+                            <span className="text-sm text-gray-500">
+                              Location: Row {type.row}, Col {type.col}
+                            </span>
+                          )}
+                        </div>
+                        {type.description && (
+                          <p className="text-sm text-gray-500 mt-1">{type.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingStockType({ id: type.id, ...type });
+                            setShowStockTypeForm(true);
+                            setShowTypesManagement(false);
+                          }}
+                          className="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Are you sure you want to delete "${type.name}"? This will not delete products of this type.`
+                              )
+                            ) {
+                              handleDeleteStockType(type.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {stockTypes.length === 0 && (
+                    <p className="text-gray-500 text-center py-10">No stock types found.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Stock overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -872,7 +1050,11 @@ const Dashboard = () => {
           {showStockTypeForm && (
             <StockTypeForm
               onSubmit={handleCreateStockType}
-              onClose={() => setShowStockTypeForm(false)}
+              onClose={() => {
+                setShowStockTypeForm(false);
+                setEditingStockType(null);
+              }}
+              initialData={editingStockType}
             />
           )}
 
@@ -886,6 +1068,7 @@ const Dashboard = () => {
 
           <StockList
             items={stockItems}
+            types={stockTypes}
             selectedTypeId={selectedStockTypeId}
             selectedAvailability={selectedStockAvailability}
             searchTerm={stockSearch}
@@ -894,15 +1077,15 @@ const Dashboard = () => {
             onSelectItem={handleSelectStockItem}
           />
 
-          {selectedStockItem && (
-            <StockDetailModal
-              item={selectedStockItem}
-              types={stockTypes}
-              onClose={() => setSelectedStockItem(null)}
-              onUpdate={handleUpdateStockItem}
-              onDelete={handleDeleteStockItem}
-            />
-          )}
+            {selectedStockItem && (
+              <StockDetailModal
+                item={selectedStockItem}
+                types={stockTypes}
+                onClose={() => setSelectedStockItem(null)}
+                onUpdate={handleUpdateStockItem}
+                onDelete={isAdmin ? handleDeleteStockItem : null}
+              />
+            )}
         </div>
       )}
     </Layout>

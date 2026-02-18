@@ -1,24 +1,70 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../services/firebase';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { auth, db } from '../services/firebase';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const unsubscribeUserRef = useRef(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      
+      // Cleanup previous user document listener
+      if (unsubscribeUserRef.current) {
+        unsubscribeUserRef.current();
+        unsubscribeUserRef.current = null;
+      }
+      
+      if (user) {
+        // Fetch user role from Firestore
+        try {
+          const userDocRef = doc(db, 'users', user.email);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            setUserRole(userData.role || 'user');
+          } else {
+            // If user document doesn't exist, default to 'user'
+            setUserRole('user');
+          }
+          
+          // Listen for role changes
+          unsubscribeUserRef.current = onSnapshot(userDocRef, (snapshot) => {
+            if (snapshot.exists()) {
+              const userData = snapshot.data();
+              setUserRole(userData.role || 'user');
+            } else {
+              setUserRole('user');
+            }
+          });
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          setUserRole('user');
+        }
+      } else {
+        setUserRole(null);
+      }
+      
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (unsubscribeUserRef.current) {
+        unsubscribeUserRef.current();
+      }
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -41,6 +87,8 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    userRole,
+    isAdmin: userRole === 'admin',
     login,
     logout,
   };

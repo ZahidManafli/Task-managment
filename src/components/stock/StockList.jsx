@@ -1,5 +1,6 @@
 const StockList = ({
   items,
+  types = [],
   selectedTypeId,
   selectedAvailability = 'all',
   searchTerm = '',
@@ -7,6 +8,11 @@ const StockList = ({
   onChangeQuantity,
   onSelectItem,
 }) => {
+  const typeById = types.reduce((acc, t) => {
+    acc[t.id] = t;
+    return acc;
+  }, {});
+
   let filteredItems =
     selectedTypeId === 'all'
       ? items
@@ -58,6 +64,13 @@ const StockList = ({
       ? Object.entries(item.properties)
       : [];
     const qty = Number(item.quantity) || 0;
+    const itemType = typeById[item.typeId];
+    const shelfRow = itemType?.row;
+    const shelfCol = itemType?.col;
+    const hasShelfLocation = shelfRow != null && shelfCol != null;
+    const shelfLocationText = hasShelfLocation
+      ? `Sıra ${shelfRow}, Sütun ${shelfCol}`
+      : 'Təyin edilməyib';
 
     let qtyBadgeClass =
       'px-2 py-1 text-xs rounded-full border bg-blue-50 text-blue-700 border-blue-100';
@@ -101,6 +114,9 @@ const StockList = ({
                   {item.typeName}
                 </span>
               )}
+            </div>
+            <div className="text-xs text-gray-600">
+              <span className="font-medium">Rəfdəki yeri:</span> {shelfLocationText}
             </div>
           </div>
           <div className="flex flex-col items-end space-y-2">
@@ -193,6 +209,13 @@ const StockList = ({
                 : [];
               const qty = Number(item.quantity) || 0;
               const isAvailable = item.available !== false;
+              const itemType = typeById[item.typeId];
+              const shelfRow = itemType?.row;
+              const shelfCol = itemType?.col;
+              const hasShelfLocation = shelfRow != null && shelfCol != null;
+              const shelfLocationText = hasShelfLocation
+                ? `Sıra ${shelfRow}, Sütun ${shelfCol}`
+                : 'Təyin edilməyib';
 
               let qtyTextClass = 'text-gray-800';
               if (qty === 0) qtyTextClass = 'text-red-600 font-semibold';
@@ -207,6 +230,10 @@ const StockList = ({
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-2">
                       <div className="font-medium text-gray-900">{item.name}</div>
+                      
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Rəfdəki yeri:</span> {shelfLocationText}
+                      </div>
                       <div
                         className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium w-fit ${
                           isAvailable

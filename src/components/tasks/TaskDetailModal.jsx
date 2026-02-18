@@ -9,6 +9,7 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState(task);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const canDelete = typeof onDelete === 'function';
 
   const handleUpdate = (updates) => {
     onUpdate({ ...editedTask, ...updates });
@@ -16,6 +17,7 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
   };
 
   const handleDelete = () => {
+    if (!canDelete) return;
     onDelete(task.id);
     onClose();
   };
@@ -135,12 +137,14 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
                 >
                   Edit Task
                 </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                >
-                  Delete Task
-                </button>
+                {canDelete && (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                  >
+                    Delete Task
+                  </button>
+                )}
                 <div className="flex-1"></div>
                 <select
                   value={task.status}
@@ -230,7 +234,7 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete }) => {
             </div>
           )}
 
-          {showDeleteConfirm && (
+          {canDelete && showDeleteConfirm && (
             <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-[60]">
               <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Task</h3>
