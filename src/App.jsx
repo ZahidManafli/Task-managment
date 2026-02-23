@@ -371,7 +371,7 @@ const Dashboard = () => {
             size: file.size,
             type: file.type,
             uploadedAt: Timestamp.now(),
-            userId: currentUser.uid,
+            uploadedBy: currentUser.email, // <-- Use email
           });
         } else {
           console.error('Error uploading document to Supabase:', result.error);
