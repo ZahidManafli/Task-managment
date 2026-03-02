@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ImageUpload from '../common/ImageUpload';
 
 const emptyProperty = { key: '', value: '' };
 
@@ -9,6 +10,7 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
   const [properties, setProperties] = useState([emptyProperty]);
   const [note, setNote] = useState('');
   const [available, setAvailable] = useState(true);
+  const [images, setImages] = useState([]);
 
   const handlePropertyChange = (index, field, value) => {
     setProperties((prev) => {
@@ -46,6 +48,7 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
       properties: propertiesMap,
       note: note.trim(),
       available: available,
+      images: images,
     });
 
     setName('');
@@ -193,6 +196,11 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
               placeholder="Optional specific note for this product"
             />
           </div>
+
+          <ImageUpload
+            onImageSelect={setImages}
+            existingImages={images}
+          />
 
           <div className="flex justify-end space-x-4">
             <button

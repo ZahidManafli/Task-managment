@@ -15,6 +15,10 @@ import StockList from './components/stock/StockList';
 import StockTypeForm from './components/stock/StockTypeForm';
 import StockItemForm from './components/stock/StockItemForm';
 import StockDetailModal from './components/stock/StockDetailModal';
+import ComputerList from './components/computers/ComputerList';
+import ComputerForm from './components/computers/ComputerForm';
+import ComputerDetailModal from './components/computers/ComputerDetailModal';
+import ComputerAssignModal from './components/computers/ComputerAssignModal';
 import { TASK_STATUSES } from './utils/constants';
 // Firebase imports
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -49,6 +53,11 @@ const Dashboard = () => {
   const [selectedStockItem, setSelectedStockItem] = useState(null);
   const [showTypesManagement, setShowTypesManagement] = useState(false);
   const [editingStockType, setEditingStockType] = useState(null);
+  const [computers, setComputers] = useState([]);
+  const [showComputerForm, setShowComputerForm] = useState(false);
+  const [selectedComputer, setSelectedComputer] = useState(null);
+  const [showComputerAssignModal, setShowComputerAssignModal] = useState(false);
+  const [assignModalType, setAssignModalType] = useState('assign');
   const { currentUser, isAdmin } = useAuth();
 
   // Load tasks from Firebase (all users can see all tasks)
@@ -174,6 +183,28 @@ const Dashboard = () => {
       },
       (error) => {
         console.error('Error loading stock items:', error);
+      }
+    );
+    
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Load computers from Firebase (all users can see all computers)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const computersQuery = query(collection(db, 'computers'));
+    const unsubscribe = onSnapshot(
+      computersQuery,
+      (snapshot) => {
+        const computersData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setComputers(computersData);
+      },
+      (error) => {
+        console.error('Error loading computers:', error);
       }
     );
     
@@ -434,8 +465,26 @@ const Dashboard = () => {
     try {
       const selectedType = stockTypes.find((t) => t.id === itemData.typeId) || null;
 
+      // Upload images to Supabase Storage first
+      const imageUrls = [];
+      for (const img of itemData.images || []) {
+        if (img.file) {
+          const filePath = `${currentUser.uid}/${Date.now()}_${img.name}`;
+          const result = await uploadFile(STORAGE_BUCKETS.STOCK_IMAGES, img.file, filePath);
+          if (result.success) {
+            imageUrls.push({ url: result.url, path: result.path, name: img.name });
+          } else {
+            console.error('Error uploading image:', result.error);
+          }
+        } else {
+          // Existing image (already uploaded)
+          imageUrls.push(img);
+        }
+      }
+
       await addDoc(collection(db, 'stockItems'), {
         ...itemData,
+        images: imageUrls,
         typeName: selectedType ? selectedType.name : '',
         createdAt: new Date(),
         createdBy: currentUser.email,
@@ -465,16 +514,60 @@ const Dashboard = () => {
     setSelectedStockItem(item);
   };
 
+  const getRemovedImagePaths = (previousImages = [], nextImages = []) => {
+    const previousPaths = previousImages
+      .map((img) => img?.path)
+      .filter(Boolean);
+    const nextPaths = new Set(
+      nextImages
+        .map((img) => img?.path)
+        .filter(Boolean)
+    );
+
+    return previousPaths.filter((path) => !nextPaths.has(path));
+  };
+
+  const deleteImagesFromBucket = async (bucket, paths = []) => {
+    for (const path of paths) {
+      const result = await deleteFile(bucket, path);
+      if (!result.success) {
+        console.error(`Error deleting image from ${bucket}:`, result.error, path);
+      }
+    }
+  };
+
   const handleUpdateStockItem = async (updatedItem) => {
     try {
       const selectedType = stockTypes.find((t) => t.id === updatedItem.typeId) || null;
       const itemRef = doc(db, 'stockItems', updatedItem.id);
+      const existingItem = stockItems.find((item) => item.id === updatedItem.id);
+
+      // Upload new images to Supabase Storage
+      const imageUrls = [];
+      for (const img of updatedItem.images || []) {
+        if (img.file) {
+          const filePath = `${currentUser.uid}/${Date.now()}_${img.name}`;
+          const result = await uploadFile(STORAGE_BUCKETS.STOCK_IMAGES, img.file, filePath);
+          if (result.success) {
+            imageUrls.push({ url: result.url, path: result.path, name: img.name });
+          } else {
+            console.error('Error uploading image:', result.error);
+          }
+        } else {
+          // Existing image (already uploaded)
+          imageUrls.push(img);
+        }
+      }
 
       const { id, ...rest } = updatedItem;
       await updateDoc(itemRef, {
         ...rest,
+        images: imageUrls,
         typeName: selectedType ? selectedType.name : '',
       });
+
+      const removedPaths = getRemovedImagePaths(existingItem?.images || [], imageUrls);
+      await deleteImagesFromBucket(STORAGE_BUCKETS.STOCK_IMAGES, removedPaths);
 
       setSelectedStockItem(null);
     } catch (error) {
@@ -484,7 +577,14 @@ const Dashboard = () => {
 
   const handleDeleteStockItem = async (itemId) => {
     try {
+      const itemToDelete = stockItems.find((item) => item.id === itemId);
       await deleteDoc(doc(db, 'stockItems', itemId));
+
+      const itemImagePaths = (itemToDelete?.images || [])
+        .map((img) => img?.path)
+        .filter(Boolean);
+      await deleteImagesFromBucket(STORAGE_BUCKETS.STOCK_IMAGES, itemImagePaths);
+
       setSelectedStockItem(null);
     } catch (error) {
       console.error('Error deleting stock item:', error);
@@ -506,6 +606,138 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error deleting stock type:', error);
     }
+  };
+
+  // Computer handlers
+  const handleCreateComputer = async (computerData) => {
+    try {
+      // Upload images to Supabase Storage first
+      const imageUrls = [];
+      for (const img of computerData.images || []) {
+        if (img.file) {
+          const filePath = `${currentUser.uid}/${Date.now()}_${img.name}`;
+          const result = await uploadFile(STORAGE_BUCKETS.COMPUTER_IMAGES, img.file, filePath);
+          if (result.success) {
+            imageUrls.push({ url: result.url, path: result.path, name: img.name });
+          } else {
+            console.error('Error uploading image:', result.error);
+          }
+        } else {
+          imageUrls.push(img);
+        }
+      }
+
+      await addDoc(collection(db, 'computers'), {
+        ...computerData,
+        images: imageUrls,
+        createdAt: new Date(),
+        createdBy: currentUser.email,
+      });
+      setShowComputerForm(false);
+    } catch (error) {
+      console.error('Error creating computer:', error);
+    }
+  };
+
+  const handleUpdateComputer = async (updatedComputer) => {
+    try {
+      const existingComputer = computers.find((computer) => computer.id === updatedComputer.id);
+
+      // Upload new images to Supabase Storage
+      const imageUrls = [];
+      for (const img of updatedComputer.images || []) {
+        if (img.file) {
+          const filePath = `${currentUser.uid}/${Date.now()}_${img.name}`;
+          const result = await uploadFile(STORAGE_BUCKETS.COMPUTER_IMAGES, img.file, filePath);
+          if (result.success) {
+            imageUrls.push({ url: result.url, path: result.path, name: img.name });
+          } else {
+            console.error('Error uploading image:', result.error);
+          }
+        } else {
+          imageUrls.push(img);
+        }
+      }
+
+      const computerRef = doc(db, 'computers', updatedComputer.id);
+      const { id, ...rest } = updatedComputer;
+      await updateDoc(computerRef, {
+        ...rest,
+        images: imageUrls,
+      });
+
+      const removedPaths = getRemovedImagePaths(existingComputer?.images || [], imageUrls);
+      await deleteImagesFromBucket(STORAGE_BUCKETS.COMPUTER_IMAGES, removedPaths);
+
+      setSelectedComputer(null);
+    } catch (error) {
+      console.error('Error updating computer:', error);
+    }
+  };
+
+  const handleDeleteComputer = async (computerId) => {
+    try {
+      const computerToDelete = computers.find((computer) => computer.id === computerId);
+      await deleteDoc(doc(db, 'computers', computerId));
+
+      const computerImagePaths = (computerToDelete?.images || [])
+        .map((img) => img?.path)
+        .filter(Boolean);
+      await deleteImagesFromBucket(STORAGE_BUCKETS.COMPUTER_IMAGES, computerImagePaths);
+
+      setSelectedComputer(null);
+    } catch (error) {
+      console.error('Error deleting computer:', error);
+    }
+  };
+
+  const handleAssignComputer = async (assignmentData) => {
+    try {
+      const computerRef = doc(db, 'computers', assignmentData.computerId);
+      await updateDoc(computerRef, {
+        status: 'in_use',
+        assignedTo: assignmentData.userId,
+        assignmentDate: new Date(),
+        assignmentNote: assignmentData.statusNote,
+        returnNote: '',
+      });
+      setShowComputerAssignModal(false);
+      setSelectedComputer(null);
+    } catch (error) {
+      console.error('Error assigning computer:', error);
+    }
+  };
+
+  const handleReturnComputer = async (returnData) => {
+    try {
+      const computerRef = doc(db, 'computers', returnData.computerId);
+      await updateDoc(computerRef, {
+        status: 'available',
+        assignedTo: null,
+        assignmentDate: null,
+        returnNote: returnData.statusNote,
+      });
+      setShowComputerAssignModal(false);
+      setSelectedComputer(null);
+    } catch (error) {
+      console.error('Error returning computer:', error);
+    }
+  };
+
+  const handleSelectComputer = (computer) => {
+    setSelectedComputer(computer);
+  };
+
+  const handleOpenAssignModal = (computer) => {
+    setSelectedComputer(computer);
+    setAssignModalType('assign');
+    setShowComputerAssignModal(true);
+  };
+
+  const handleOpenReturnModal = (computer) => {
+    setSelectedComputer(computer);
+    setAssignModalType('return');
+    setShowComputerAssignModal(true);
   };
 
   return (
@@ -1194,6 +1426,62 @@ const Dashboard = () => {
                 onDelete={isAdmin ? handleDeleteStockItem : null}
               />
             )}
+        </div>
+      )}
+
+      {activeTab === 'computers' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Computers</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Track computer assignments and status
+              </p>
+            </div>
+            <button
+              onClick={() => setShowComputerForm(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              + Add Computer
+            </button>
+          </div>
+
+          {showComputerForm && (
+            <ComputerForm
+              onSubmit={handleCreateComputer}
+              onClose={() => setShowComputerForm(false)}
+            />
+          )}
+
+          <ComputerList
+            computers={computers}
+            onSelect={handleSelectComputer}
+            onAssign={handleOpenAssignModal}
+            onReturn={handleOpenReturnModal}
+          />
+
+          {selectedComputer && !showComputerAssignModal && (
+            <ComputerDetailModal
+              computer={selectedComputer}
+              onClose={() => setSelectedComputer(null)}
+              onUpdate={handleUpdateComputer}
+              onDelete={isAdmin ? handleDeleteComputer : null}
+              isAdmin={isAdmin}
+            />
+          )}
+
+          {showComputerAssignModal && selectedComputer && (
+            <ComputerAssignModal
+              computer={selectedComputer}
+              users={users}
+              onSubmit={assignModalType === 'assign' ? handleAssignComputer : handleReturnComputer}
+              onClose={() => {
+                setShowComputerAssignModal(false);
+                setSelectedComputer(null);
+              }}
+              type={assignModalType}
+            />
+          )}
         </div>
       )}
     </Layout>

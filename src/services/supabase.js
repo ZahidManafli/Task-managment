@@ -15,6 +15,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const STORAGE_BUCKETS = {
   TASK_IMAGES: 'task-images',
   DOCUMENTS: 'documents',
+  STOCK_IMAGES: 'stock-images',
+  COMPUTER_IMAGES: 'computer-images',
 };
 
 // Helper function to upload file to Supabase Storage

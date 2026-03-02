@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ImageUpload from '../common/ImageUpload';
 
 const emptyProperty = { key: '', value: '' };
 
@@ -89,6 +90,7 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
   const [properties, setProperties] = useState([emptyProperty]);
   const [note, setNote] = useState('');
   const [available, setAvailable] = useState(true);
+  const [images, setImages] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -99,6 +101,7 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
     setQuantity(Number(item.quantity) || 0);
     setNote(item.note || '');
     setAvailable(item.available !== undefined ? item.available : true);
+    setImages(item.images || []);
 
     const entries = item.properties
       ? Object.entries(item.properties).map(([key, value]) => ({ key, value }))
@@ -134,6 +137,7 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
       ? Object.entries(item.properties).map(([key, value]) => ({ key, value }))
       : [];
     setProperties(entries.length > 0 ? entries : [emptyProperty]);
+    setImages(item.images || []);
     setIsEditing(false);
   };
 
@@ -158,6 +162,7 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
       properties: propertiesMap,
       note: note.trim(),
       available: available,
+      images: images,
     });
   };
 
@@ -319,6 +324,26 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
                   )}
                 </div>
               </div>
+
+              {/* Images */}
+              {item.images && item.images.length > 0 && (
+                <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                    Product Images
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {item.images.map((img, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={img.url || img.preview}
+                          alt={img.name || `Image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border border-slate-200"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Footer actions */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-3 border-t border-slate-200 mt-2">
@@ -483,6 +508,11 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 />
               </div>
+
+              <ImageUpload
+                onImageSelect={setImages}
+                existingImages={images}
+              />
 
               <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-4">
                 {onDelete && (
