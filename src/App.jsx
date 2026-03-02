@@ -694,12 +694,27 @@ const Dashboard = () => {
   const handleAssignComputer = async (assignmentData) => {
     try {
       const computerRef = doc(db, 'computers', assignmentData.computerId);
+      
+      // Get current computer data to access history
+      const currentComputer = computers.find(c => c.id === assignmentData.computerId);
+      const currentHistory = currentComputer?.assignmentHistory || [];
+      
+      // Create new history entry
+      const newHistoryEntry = {
+        assignedTo: assignmentData.userId,
+        assignedDate: new Date(),
+        assignmentNote: assignmentData.statusNote,
+        returnDate: null,
+        returnNote: '',
+      };
+      
       await updateDoc(computerRef, {
         status: 'in_use',
         assignedTo: assignmentData.userId,
         assignmentDate: new Date(),
         assignmentNote: assignmentData.statusNote,
         returnNote: '',
+        assignmentHistory: [...currentHistory, newHistoryEntry],
       });
       setShowComputerAssignModal(false);
       setSelectedComputer(null);
@@ -711,12 +726,38 @@ const Dashboard = () => {
   const handleReturnComputer = async (returnData) => {
     try {
       const computerRef = doc(db, 'computers', returnData.computerId);
-      await updateDoc(computerRef, {
-        status: 'available',
-        assignedTo: null,
-        assignmentDate: null,
-        returnNote: returnData.statusNote,
-      });
+      
+      // Get current computer data to update the last history entry
+      const currentComputer = computers.find(c => c.id === returnData.computerId);
+      const currentHistory = currentComputer?.assignmentHistory || [];
+      
+      // Update the last history entry with return information
+      if (currentHistory.length > 0) {
+        const updatedHistory = [...currentHistory];
+        const lastEntry = updatedHistory[updatedHistory.length - 1];
+        updatedHistory[updatedHistory.length - 1] = {
+          ...lastEntry,
+          returnDate: new Date(),
+          returnNote: returnData.statusNote,
+        };
+        
+        await updateDoc(computerRef, {
+          status: 'available',
+          assignedTo: null,
+          assignmentDate: null,
+          returnNote: returnData.statusNote,
+          assignmentHistory: updatedHistory,
+        });
+      } else {
+        // Fallback if no history exists
+        await updateDoc(computerRef, {
+          status: 'available',
+          assignedTo: null,
+          assignmentDate: null,
+          returnNote: returnData.statusNote,
+        });
+      }
+      
       setShowComputerAssignModal(false);
       setSelectedComputer(null);
     } catch (error) {
