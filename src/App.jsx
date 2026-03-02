@@ -821,7 +821,7 @@ const Dashboard = () => {
 
           {/* Task view sub-tabs: Assigned / Sent */}
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8">
+            <nav className="flex space-x-8 flex-wrap">
               <button
                 onClick={() => setTaskViewFilter('assigned')}
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
