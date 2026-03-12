@@ -1445,6 +1445,7 @@ const Dashboard = () => {
                 <option value="all">All</option>
                 <option value="available">Available</option>
                 <option value="not_available">Not Available</option>
+                <option value="in_use">In Use</option>
                 <option value="must_send_service">Must Send To Service</option>
                 <option value="must_refill">Must Refill (Katriclər)</option>
               </select>

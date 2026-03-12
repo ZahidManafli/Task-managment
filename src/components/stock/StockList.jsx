@@ -385,6 +385,17 @@ const StockList = ({
     const status = getStockStatusValue(item, item.typeName || itemType?.name || '');
     const statusMeta = getStockStatusMeta(status);
 
+    const statusAccentClass =
+      status === 'available'
+        ? 'bg-emerald-400'
+        : status === 'in_use'
+        ? 'bg-sky-400'
+        : status === 'must_send_service'
+        ? 'bg-orange-400'
+        : status === 'must_refill'
+        ? 'bg-amber-400'
+        : 'bg-red-400';
+
     return (
       <div
         key={item.id}
@@ -396,9 +407,7 @@ const StockList = ({
         <div className="pointer-events-none absolute -left-12 -bottom-16 w-32 h-32 rounded-full bg-emerald-50 opacity-40 blur-2xl" />
 
         <div
-          className={`absolute inset-y-3 left-0 w-1 rounded-full ${
-            status === 'available' ? 'bg-emerald-400' : 'bg-red-400'
-          }`}
+          className={`absolute inset-y-3 left-0 w-1 rounded-full ${statusAccentClass}`}
         />
         <div className="flex justify-between items-start gap-4 pl-3">
           <div className="flex items-start gap-3 min-w-0">

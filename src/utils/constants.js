@@ -18,6 +18,7 @@ export const STATUS_COLORS = {
 export const STOCK_STATUS_OPTIONS = [
   { value: 'available', label: 'Available' },
   { value: 'not_available', label: 'Not Available' },
+  { value: 'in_use', label: 'In Use' },
   { value: 'must_send_service', label: 'Must Send To Service' },
   { value: 'must_refill', label: 'Must Refill' },
 ];
@@ -28,7 +29,12 @@ export const isKatricTypeName = (typeName = '') =>
 export const getStockStatusValue = (item = {}, typeName = '') => {
   const rawStatus = item.stockStatus || item.status;
 
-  if (rawStatus === 'available' || rawStatus === 'not_available' || rawStatus === 'must_send_service') {
+  if (
+    rawStatus === 'available' ||
+    rawStatus === 'not_available' ||
+    rawStatus === 'in_use' ||
+    rawStatus === 'must_send_service'
+  ) {
     return rawStatus;
   }
 
@@ -50,6 +56,11 @@ export const getStockStatusMeta = (status) => {
       label: 'Not Available',
       containerClass: 'bg-red-50 text-red-700 border border-red-200',
       dotClass: 'bg-red-500',
+    },
+    in_use: {
+      label: 'In Use',
+      containerClass: 'bg-sky-50 text-sky-700 border border-sky-200',
+      dotClass: 'bg-sky-500',
     },
     must_send_service: {
       label: 'Must Send To Service',
