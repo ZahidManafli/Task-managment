@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ImageUpload from '../common/ImageUpload';
+import { getStockStatusMeta, getStockStatusValue, isKatricTypeName } from '../../utils/constants';
 
 const emptyProperty = { key: '', value: '' };
 
@@ -89,7 +90,7 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
   const [quantity, setQuantity] = useState(0);
   const [properties, setProperties] = useState([emptyProperty]);
   const [note, setNote] = useState('');
-  const [available, setAvailable] = useState(true);
+  const [stockStatus, setStockStatus] = useState('available');
   const [images, setImages] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -100,7 +101,7 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
     setTypeId(item.typeId || '');
     setQuantity(Number(item.quantity) || 0);
     setNote(item.note || '');
-    setAvailable(item.available !== undefined ? item.available : true);
+    setStockStatus(getStockStatusValue(item, item.typeName || ''));
     setImages(item.images || []);
 
     const entries = item.properties
@@ -132,7 +133,7 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
     setTypeId(item.typeId || '');
     setQuantity(Number(item.quantity) || 0);
     setNote(item.note || '');
-    setAvailable(item.available !== undefined ? item.available : true);
+    setStockStatus(getStockStatusValue(item, item.typeName || ''));
     const entries = item.properties
       ? Object.entries(item.properties).map(([key, value]) => ({ key, value }))
       : [];
@@ -161,7 +162,8 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
       quantity: Number(quantity) || 0,
       properties: propertiesMap,
       note: note.trim(),
-      available: available,
+      stockStatus,
+      available: stockStatus === 'available',
       images: images,
     });
   };
@@ -193,6 +195,10 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
   const shelfLocationText = hasShelfLocation
     ? `Sıra ${shelfRow}, Sütun ${shelfCol}`
     : 'Təyin edilməyib';
+  const itemStatus = getStockStatusValue(item, currentType?.name || item.typeName || '');
+  const itemStatusMeta = getStockStatusMeta(itemStatus);
+  const editingType = types?.find((t) => t.id === typeId);
+  const canUseRefillStatus = isKatricTypeName(editingType?.name || item.typeName || '');
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-slate-900/15 flex items-center justify-center z-50 p-4">
@@ -270,18 +276,12 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
                     Availability
                   </p>
                   <div
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
-                      item.available !== false
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-red-50 text-red-700 border border-red-200'
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${itemStatusMeta.containerClass}`}
                   >
                     <span
-                      className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                        item.available !== false ? 'bg-emerald-500' : 'bg-red-500'
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full mr-1.5 ${itemStatusMeta.dotClass}`}
                     />
-                    {item.available !== false ? 'Available' : 'Not Available'}
+                    {itemStatusMeta.label}
                   </div>
                   <p className="mt-2 text-[11px] text-slate-600">
                     <span className="font-semibold">Rəfdəki yeri:</span> {shelfLocationText}
@@ -408,7 +408,15 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
                   </label>
                   <select
                     value={typeId}
-                    onChange={(e) => setTypeId(e.target.value)}
+                    onChange={(e) => {
+                      const nextTypeId = e.target.value;
+                      const nextType = types.find((type) => type.id === nextTypeId);
+                      const nextIsKatric = isKatricTypeName(nextType?.name || '');
+                      setTypeId(nextTypeId);
+                      if (!nextIsKatric && stockStatus === 'must_refill') {
+                        setStockStatus('available');
+                      }
+                    }}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   >
@@ -441,13 +449,15 @@ const StockDetailModal = ({ item, types, onClose, onUpdate, onDelete }) => {
                     Availability *
                   </label>
                   <select
-                    value={available ? 'available' : 'not_available'}
-                    onChange={(e) => setAvailable(e.target.value === 'available')}
+                    value={stockStatus}
+                    onChange={(e) => setStockStatus(e.target.value)}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   >
                     <option value="available">Available</option>
                     <option value="not_available">Not Available</option>
+                    <option value="must_send_service">Must Send To Service</option>
+                    {canUseRefillStatus && <option value="must_refill">Must Refill</option>}
                   </select>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ImageUpload from '../common/ImageUpload';
+import { isKatricTypeName } from '../../utils/constants';
 
 const emptyProperty = { key: '', value: '' };
 
@@ -9,8 +10,11 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
   const [quantity, setQuantity] = useState(1);
   const [properties, setProperties] = useState([emptyProperty]);
   const [note, setNote] = useState('');
-  const [available, setAvailable] = useState(true);
+  const [stockStatus, setStockStatus] = useState('available');
   const [images, setImages] = useState([]);
+
+  const selectedType = types.find((type) => type.id === typeId);
+  const isKatricType = isKatricTypeName(selectedType?.name || '');
 
   const handlePropertyChange = (index, field, value) => {
     setProperties((prev) => {
@@ -47,7 +51,8 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
       quantity: Number(quantity) || 0,
       properties: propertiesMap,
       note: note.trim(),
-      available: available,
+      stockStatus,
+      available: stockStatus === 'available',
       images: images,
     });
 
@@ -56,7 +61,7 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
     setQuantity(1);
     setProperties([emptyProperty]);
     setNote('');
-    setAvailable(true);
+    setStockStatus('available');
   };
 
   return (
@@ -95,7 +100,15 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
               </label>
               <select
                 value={typeId}
-                onChange={(e) => setTypeId(e.target.value)}
+                onChange={(e) => {
+                  const nextTypeId = e.target.value;
+                  const nextType = types.find((type) => type.id === nextTypeId);
+                  const nextIsKatric = isKatricTypeName(nextType?.name || '');
+                  setTypeId(nextTypeId);
+                  if (!nextIsKatric && stockStatus === 'must_refill') {
+                    setStockStatus('available');
+                  }
+                }}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               >
@@ -128,13 +141,15 @@ const StockItemForm = ({ types, onSubmit, onClose }) => {
                 Availability *
               </label>
               <select
-                value={available ? 'available' : 'not_available'}
-                onChange={(e) => setAvailable(e.target.value === 'available')}
+                value={stockStatus}
+                onChange={(e) => setStockStatus(e.target.value)}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               >
                 <option value="available">Available</option>
                 <option value="not_available">Not Available</option>
+                <option value="must_send_service">Must Send To Service</option>
+                {isKatricType && <option value="must_refill">Must Refill</option>}
               </select>
             </div>
           </div>

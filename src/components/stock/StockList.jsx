@@ -1,3 +1,5 @@
+import { getStockStatusMeta, getStockStatusValue } from '../../utils/constants';
+
 const StockList = ({
   items,
   types = [],
@@ -18,11 +20,14 @@ const StockList = ({
       ? items
       : items.filter((item) => item.typeId === selectedTypeId);
   
-  // Apply availability filter
+  // Apply status filter
   if (selectedAvailability !== 'all') {
-    const isAvailable = selectedAvailability === 'available';
     filteredItems = filteredItems.filter(
-      (item) => (item.available !== false) === isAvailable
+      (item) => {
+        const itemType = typeById[item.typeId];
+        const status = getStockStatusValue(item, item.typeName || itemType?.name || '');
+        return status === selectedAvailability;
+      }
     );
   }
 
@@ -377,7 +382,8 @@ const StockList = ({
         'px-2 py-1 text-xs rounded-full border bg-amber-50 text-amber-700 border-amber-200';
     }
 
-    const isAvailable = item.available !== false;
+    const status = getStockStatusValue(item, item.typeName || itemType?.name || '');
+    const statusMeta = getStockStatusMeta(status);
 
     return (
       <div
@@ -391,7 +397,7 @@ const StockList = ({
 
         <div
           className={`absolute inset-y-3 left-0 w-1 rounded-full ${
-            isAvailable ? 'bg-emerald-400' : 'bg-red-400'
+            status === 'available' ? 'bg-emerald-400' : 'bg-red-400'
           }`}
         />
         <div className="flex justify-between items-start gap-4 pl-3">
@@ -410,18 +416,12 @@ const StockList = ({
                   </span>
                 )}
                 <div
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
-                    isAvailable
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-red-50 text-red-700 border border-red-200'
-                  }`}
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${statusMeta.containerClass}`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                      isAvailable ? 'bg-emerald-500' : 'bg-red-500'
-                    }`}
+                    className={`w-1.5 h-1.5 rounded-full mr-1.5 ${statusMeta.dotClass}`}
                   />
-                  {isAvailable ? 'Available' : 'Not Available'}
+                  {statusMeta.label}
                 </div>
               </div>
               <div className="text-[11px] text-gray-600 flex items-center gap-1.5">
@@ -536,8 +536,9 @@ const StockList = ({
                 ? Object.entries(item.properties)
                 : [];
               const qty = Number(item.quantity) || 0;
-              const isAvailable = item.available !== false;
               const itemType = typeById[item.typeId];
+              const status = getStockStatusValue(item, item.typeName || itemType?.name || '');
+              const statusMeta = getStockStatusMeta(status);
               const shelfRow = itemType?.row;
               const shelfCol = itemType?.col;
               const hasShelfLocation = shelfRow != null && shelfCol != null;
@@ -575,18 +576,12 @@ const StockList = ({
                           <span className="font-semibold">Rəfdəki yeri:</span> {shelfLocationText}
                         </div>
                         <div
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium w-fit ${
-                            isAvailable
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium w-fit ${statusMeta.containerClass}`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                              isAvailable ? 'bg-emerald-500' : 'bg-red-500'
-                            }`}
+                            className={`w-1.5 h-1.5 rounded-full mr-1.5 ${statusMeta.dotClass}`}
                           />
-                          {isAvailable ? 'Available' : 'Not Available'}
+                          {statusMeta.label}
                         </div>
                       </div>
                     </div>

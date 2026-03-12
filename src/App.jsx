@@ -19,7 +19,7 @@ import ComputerList from './components/computers/ComputerList';
 import ComputerForm from './components/computers/ComputerForm';
 import ComputerDetailModal from './components/computers/ComputerDetailModal';
 import ComputerAssignModal from './components/computers/ComputerAssignModal';
-import { TASK_STATUSES } from './utils/constants';
+import { TASK_STATUSES, getStockStatusValue, isKatricTypeName } from './utils/constants';
 // Firebase imports
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from './services/firebase';
@@ -464,6 +464,10 @@ const Dashboard = () => {
   const handleCreateStockItem = async (itemData) => {
     try {
       const selectedType = stockTypes.find((t) => t.id === itemData.typeId) || null;
+      const normalizedStockStatus =
+        itemData.stockStatus === 'must_refill' && !isKatricTypeName(selectedType?.name || '')
+          ? 'available'
+          : getStockStatusValue(itemData, selectedType?.name || '');
 
       // Upload images to Supabase Storage first
       const imageUrls = [];
@@ -484,6 +488,8 @@ const Dashboard = () => {
 
       await addDoc(collection(db, 'stockItems'), {
         ...itemData,
+        stockStatus: normalizedStockStatus,
+        available: normalizedStockStatus === 'available',
         images: imageUrls,
         typeName: selectedType ? selectedType.name : '',
         createdAt: new Date(),
@@ -539,6 +545,10 @@ const Dashboard = () => {
   const handleUpdateStockItem = async (updatedItem) => {
     try {
       const selectedType = stockTypes.find((t) => t.id === updatedItem.typeId) || null;
+      const normalizedStockStatus =
+        updatedItem.stockStatus === 'must_refill' && !isKatricTypeName(selectedType?.name || '')
+          ? 'available'
+          : getStockStatusValue(updatedItem, selectedType?.name || '');
       const itemRef = doc(db, 'stockItems', updatedItem.id);
       const existingItem = stockItems.find((item) => item.id === updatedItem.id);
 
@@ -562,6 +572,8 @@ const Dashboard = () => {
       const { id, ...rest } = updatedItem;
       await updateDoc(itemRef, {
         ...rest,
+        stockStatus: normalizedStockStatus,
+        available: normalizedStockStatus === 'available',
         images: imageUrls,
         typeName: selectedType ? selectedType.name : '',
       });
@@ -1155,11 +1167,14 @@ const Dashboard = () => {
                   ? stockItems
                   : stockItems.filter((i) => i.typeId === selectedStockTypeId);
               
-              // Apply availability filter
+              // Apply status filter
               if (selectedStockAvailability !== 'all') {
-                const isAvailable = selectedStockAvailability === 'available';
                 scopedItems = scopedItems.filter(
-                  (i) => (i.available !== false) === isAvailable
+                  (i) => {
+                    const itemType = stockTypes.find((t) => t.id === i.typeId);
+                    const status = getStockStatusValue(i, i.typeName || itemType?.name || '');
+                    return status === selectedStockAvailability;
+                  }
                 );
               }
 
@@ -1173,11 +1188,17 @@ const Dashboard = () => {
               ).length;
               // Calculate available quantity (sum of quantities, not count of items)
               const available = scopedItems
-                .filter((i) => i.available !== false)
+                .filter((i) => {
+                  const itemType = stockTypes.find((t) => t.id === i.typeId);
+                  return getStockStatusValue(i, i.typeName || itemType?.name || '') === 'available';
+                })
                 .reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
               // Calculate not available quantity (sum of quantities, not count of items)
               const notAvailable = scopedItems
-                .filter((i) => i.available === false)
+                .filter((i) => {
+                  const itemType = stockTypes.find((t) => t.id === i.typeId);
+                  return getStockStatusValue(i, i.typeName || itemType?.name || '') !== 'available';
+                })
                 .reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
 
               return (
@@ -1424,6 +1445,8 @@ const Dashboard = () => {
                 <option value="all">All</option>
                 <option value="available">Available</option>
                 <option value="not_available">Not Available</option>
+                <option value="must_send_service">Must Send To Service</option>
+                <option value="must_refill">Must Refill (Katriclər)</option>
               </select>
             </div>
           </div>
