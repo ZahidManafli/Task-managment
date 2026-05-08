@@ -19,6 +19,7 @@ import ComputerList from './components/computers/ComputerList';
 import ComputerForm from './components/computers/ComputerForm';
 import ComputerDetailModal from './components/computers/ComputerDetailModal';
 import ComputerAssignModal from './components/computers/ComputerAssignModal';
+import AdminKnowledge from './components/admin/AdminKnowledge';
 import { TASK_STATUSES, getStockStatusValue, isKatricTypeName } from './utils/constants';
 // Firebase imports
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -27,6 +28,18 @@ import { db } from './services/firebase';
 import { uploadFile, deleteFile, STORAGE_BUCKETS } from './services/supabase';
 // Email service
 import { sendTaskAssignmentEmail, sendStatusChangeEmail } from './services/emailService';
+// AI Search initialization
+import { initializeAiSearch } from './services/aiSearch';
+
+const AdminKnowledgeRoute = () => {
+  const { isAdmin } = useAuth();
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <AdminKnowledge />;
+};
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('tasks');
@@ -1554,16 +1567,37 @@ const Dashboard = () => {
 };
 
 const App = () => {
+  // Initialize AI search service on app startup
+  useEffect(() => {
+    initializeAiSearch();
+  }, []);
+
   return (
     <Router>
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route
+            path="/admin/knowledge"
+            element={
+              <ProtectedRoute>
+                <AdminKnowledgeRoute />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/knowledge"
+            element={
+              <ProtectedRoute>
+                <AdminKnowledge />
               </ProtectedRoute>
             }
           />

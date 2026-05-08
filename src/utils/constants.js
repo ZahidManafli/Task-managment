@@ -76,3 +76,26 @@ export const getStockStatusMeta = (status) => {
 
   return config[status] || config.not_available;
 };
+
+// AI Chat Constants
+export const CHAT_COLLECTIONS = {
+  KNOWLEDGE_BASE: 'knowledge_base',
+  CHAT_CONVERSATIONS: 'chat_conversations',
+  CHAT_MESSAGES: 'chat_messages',
+};
+
+export const CHAT_MESSAGE_ROLES = {
+  USER: 'user',
+  ASSISTANT: 'assistant',
+};
+
+export const FUSE_CONFIG = {
+  keys: [
+    { name: 'keywords', weight: 2 },
+    { name: 'question', weight: 1 },
+  ],
+  threshold: 0.5,
+  distance: 100,
+  minMatchCharLength: 2,
+  includeScore: true,
+};

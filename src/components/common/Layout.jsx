@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import FloatingButton from '../chat/FloatingButton';
+import AiChat from '../chat/AiChat';
+import { useAiChat } from '../../hooks/useAiChat';
 
 const Layout = ({ children, activeTab, onTabChange }) => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const { messages, loading, sendMessage } = useAiChat();
 
   const handleLogout = async () => {
     await logout();
@@ -44,6 +49,17 @@ const Layout = ({ children, activeTab, onTabChange }) => {
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        navigate('/admin/knowledge');
+                        setShowUserMenu(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      AI Knowledge Manager
+                    </button>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -82,6 +98,16 @@ const Layout = ({ children, activeTab, onTabChange }) => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+
+      {/* AI Chat Widget */}
+      <FloatingButton onClick={() => setShowChat(true)} />
+      <AiChat
+        isOpen={showChat}
+        onClose={() => setShowChat(false)}
+        messages={messages}
+        onSendMessage={sendMessage}
+        loading={loading}
+      />
     </div>
   );
 };
