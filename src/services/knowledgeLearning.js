@@ -3,25 +3,47 @@ import { db } from './firebase';
 import { searchAnswer, addToCacheAndRebuild } from './aiSearch';
 
 /**
- * Stop words to filter out from keywords
- * Common words that don't add semantic value
+ * Stop words to filter out from auto-generated keywords.
+ *
+ * IMPORTANT: Generic words like "problemi", "xeta", "issue" are included here
+ * because they appear in almost every question and add no topic signal.
+ * If they were kept as keywords they would cause cross-topic false matches
+ * (e.g. "rj45 problemi" matching "Grandstream səs yoxdur" just because
+ * both share the keyword "problemi").
  */
 const STOP_WORDS = new Set([
+  // ── English function words ──────────────────────────────────────────────
   'a', 'an', 'and', 'are', 'as', 'at', 'be', 'but', 'by',
   'for', 'if', 'in', 'into', 'is', 'it', 'no', 'not', 'of',
   'on', 'or', 'such', 'that', 'the', 'to', 'up', 'with',
   'what', 'when', 'where', 'which', 'who', 'why', 'how', 'do', 'does',
   'did', 'have', 'has', 'had', 'you', 'your', 'me', 'my', 'he', 'she',
-  'it', 'we', 'they', 'them', 'their', 'this', 'that', 'these', 'those',
+  'we', 'they', 'them', 'their', 'this', 'these', 'those',
   'am', 'was', 'were', 'been', 'being', 'from', 'just', 'should', 'would',
   'could', 'might', 'must', 'can', 'may', 'will', 'shall', 'about',
-  // Add Azerbaijani stop words if needed
-  'və', 'bu', 'o', 'var', 'yoxdur',
+
+  // ── Generic English tech/support words (topic-neutral) ─────────────────
+  // These words appear in almost every IT question and must NOT be keywords,
+  // otherwise every entry would match every other entry.
+  'problem', 'problems', 'issue', 'issues', 'error', 'errors',
+  'help', 'fix', 'fixing', 'check', 'checking', 'not', 'working',
+  'work', 'cant', 'cannot', 'doesnt', 'isnt', 'need', 'want',
+  'know', 'get', 'use', 'using', 'please', 'try', 'trying',
+
+  // ── Azerbaijani function words ──────────────────────────────────────────
+  'və', 'bu', 'o', 'var', 'yoxdur', 'da', 'də', 'ki', 'bir', 'ile',
+  'ilə', 'üçün', 'ucun', 'olan', 'olan', 'edir', 'etmir', 'olur',
+  'olmur', 'ola', 'bilər', 'bilir', 'necə', 'nece', 'nədir', 'nedir',
+  'harda', 'harada', 'niyə', 'niye', 'lazım', 'lazim', 'lazımdır',
+
+  // ── Generic Azerbaijani tech/support words (topic-neutral) ─────────────
+  // Same logic as English above — these appear in every question.
+  'problemi', 'problem', 'xeta', 'xəta', 'sehv', 'səhv',
+  'yoxla', 'yoxlayın', 'edin', 'etmek', 'etmək',
 ]);
 
 /**
- * Normalize text for consistent processing
- * Same normalization as aiSearch.js
+ * Normalize text for consistent processing (mirrors aiSearch.js)
  */
 const normalizeText = (text) => {
   if (!text) return '';
@@ -35,11 +57,14 @@ const normalizeText = (text) => {
 };
 
 /**
- * Generate meaningful keywords from text
- * Filters stop words, short tokens, and extracts n-grams
+ * Generate meaningful keywords from text.
+ *
+ * Only topic-specific words survive; generic / stop words are stripped.
+ * This ensures the keyword index is precise and does not cause
+ * cross-topic false positives during search.
  *
  * @param {string} text - Combined text from question and answer
- * @returns {Array<string>} Array of meaningful keywords
+ * @returns {Array<string>} Array of meaningful keywords (max 15)
  */
 export const generateKeywords = (text) => {
   if (!text) return [];
@@ -47,55 +72,45 @@ export const generateKeywords = (text) => {
   const normalized = normalizeText(text);
   const words = normalized.split(/\s+/).filter((word) => word.length > 0);
 
-  // Filter: remove stop words and very short tokens
+  // Keep only topic-specific words: length ≥ 3 and not a stop word
   const meaningfulWords = words.filter(
     (word) => word.length >= 3 && !STOP_WORDS.has(word)
   );
 
-  // Remove duplicates while preserving order
   const uniqueKeywords = Array.from(new Set(meaningfulWords));
 
-  // Extract 2-3 word n-grams (bigrams and trigrams)
+  // Build bigrams and trigrams from meaningful words only
+  // (using raw words[] would risk phrases like "problemi yoxlayın" as keywords)
   const ngrams = [];
-  for (let i = 0; i < words.length - 1; i++) {
-    // Bigram: 2-word phrase
-    const bigram = [words[i], words[i + 1]].join(' ');
-    if (bigram.length >= 5 && !STOP_WORDS.has(words[i])) {
+  for (let i = 0; i < uniqueKeywords.length - 1; i++) {
+    const bigram = [uniqueKeywords[i], uniqueKeywords[i + 1]].join(' ');
+    if (bigram.length >= 5) {
       ngrams.push(bigram);
     }
 
-    // Trigram: 3-word phrase
-    if (i < words.length - 2) {
-      const trigram = [words[i], words[i + 1], words[i + 2]].join(' ');
-      if (
-        trigram.length >= 8 &&
-        !STOP_WORDS.has(words[i]) &&
-        !STOP_WORDS.has(words[i + 1])
-      ) {
+    if (i < uniqueKeywords.length - 2) {
+      const trigram = [uniqueKeywords[i], uniqueKeywords[i + 1], uniqueKeywords[i + 2]].join(' ');
+      if (trigram.length >= 8) {
         ngrams.push(trigram);
       }
     }
   }
 
-  // Combine single words and n-grams, limit to top keywords
-  const allKeywords = [...uniqueKeywords, ...ngrams];
+  const allKeywords   = [...uniqueKeywords, ...ngrams];
   const dedupedKeywords = Array.from(new Set(allKeywords));
 
-  return dedupedKeywords.slice(0, 15); // Limit to 15 keywords
+  return dedupedKeywords.slice(0, 15);
 };
 
 /**
- * Check if a similar question already exists in knowledge base
- * Uses Fuse.js search to find potential duplicates
+ * Check if a similar question already exists in knowledge base.
  *
- * @param {string} newQuestion - Question to check for duplicates
- * @returns {Promise<Object|null>} Matching document or null
+ * @param {string} newQuestion
+ * @returns {Promise<Object|null>}
  */
 export const checkForDuplicates = async (newQuestion) => {
   try {
     const result = await searchAnswer(newQuestion);
-    // If we find a match with reasonable score, consider it a potential duplicate
-    // Fuse.js score is 0-1, lower is better; threshold of 0.3 means fairly similar
     if (result && result.score <= 0.3) {
       return result;
     }
@@ -107,87 +122,53 @@ export const checkForDuplicates = async (newQuestion) => {
 };
 
 /**
- * Save new knowledge entry to Firestore
- * Creates document in knowledge_base collection with auto-generated keywords
+ * Save new knowledge entry to Firestore.
  *
- * @param {string} question - User's original question
- * @param {string} answer - Admin's provided answer
- * @param {string} userId - Current user's UID
+ * @param {string} question
+ * @param {string} answer
+ * @param {string} userId
  * @returns {Promise<Object>} { success, id, error, duplicate }
  */
 export const saveNewKnowledge = async (question, answer, userId) => {
   try {
-    // Validate inputs
     if (!question || !question.trim()) {
-      return {
-        success: false,
-        error: 'Question cannot be empty',
-        id: null,
-        duplicate: null,
-      };
+      return { success: false, error: 'Question cannot be empty', id: null, duplicate: null };
     }
-
     if (!answer || !answer.trim()) {
-      return {
-        success: false,
-        error: 'Answer cannot be empty',
-        id: null,
-        duplicate: null,
-      };
+      return { success: false, error: 'Answer cannot be empty', id: null, duplicate: null };
     }
-
     if (!userId) {
-      return {
-        success: false,
-        error: 'User ID is required',
-        id: null,
-        duplicate: null,
-      };
+      return { success: false, error: 'User ID is required', id: null, duplicate: null };
     }
 
-    // Check for duplicates before saving
     const duplicateCheck = await checkForDuplicates(question);
 
-    // Generate keywords from combined question and answer
+    // Generate keywords (generic words like "problemi" are already filtered)
     const keywords = generateKeywords(`${question} ${answer}`);
 
-    // Create Firestore document
     const docRef = await addDoc(collection(db, 'knowledge_base'), {
-      question: question.trim(),
-      answer: answer.trim(),
+      question:  question.trim(),
+      answer:    answer.trim(),
       keywords,
-      category: 'User Contributed',
+      category:  'User Contributed',
       createdAt: serverTimestamp(),
       createdBy: userId,
     });
 
-    return {
-      success: true,
-      id: docRef.id,
-      error: null,
-      duplicate: duplicateCheck, // Include duplicate warning (if any)
-    };
+    return { success: true, id: docRef.id, error: null, duplicate: duplicateCheck };
   } catch (error) {
     console.error('Error saving knowledge:', error);
-    return {
-      success: false,
-      error: `Failed to save: ${error.message}`,
-      id: null,
-      duplicate: null,
-    };
+    return { success: false, error: `Failed to save: ${error.message}`, id: null, duplicate: null };
   }
 };
 
 /**
- * Update local cache with new knowledge entry
- * This is called from AiChat after a successful save
- * Integrates with aiSearch to rebuild Fuse.js index
+ * Update local cache with new knowledge entry.
  *
- * @param {Object} newEntry - New knowledge document from Firestore
+ * @param {Object} newEntry
  */
 export const updateLocalCache = async (newEntry) => {
   try {
-    // Call the cache update function from aiSearch directly
     await addToCacheAndRebuild(newEntry);
   } catch (error) {
     console.error('Error updating local cache:', error);
