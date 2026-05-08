@@ -28,12 +28,20 @@ export const AiChat = ({
   const [learningError, setLearningError] = useState(null);
   const [duplicateMatch, setDuplicateMatch] = useState(null);
   const [pendingAnswer, setPendingAnswer] = useState(null);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
-  // Auto-scroll to latest message
+  // Auto-scroll to latest message and keep the view at the bottom when opened
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading, learningTriggered]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const scrollToBottom = () => {
+      container.scrollTop = container.scrollHeight;
+    };
+
+    const frame = window.requestAnimationFrame(scrollToBottom);
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen, messages, loading, learningTriggered]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -172,7 +180,7 @@ export const AiChat = ({
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 bg-gray-50">
           {messages.length === 0 && !learningTriggered ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="text-4xl mb-2">👋</div>
@@ -209,7 +217,6 @@ export const AiChat = ({
               )}
 
               {loading && <TypingAnimation />}
-              <div ref={messagesEndRef} />
             </>
           )}
         </div>
