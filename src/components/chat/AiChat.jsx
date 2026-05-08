@@ -151,7 +151,7 @@ export const AiChat = ({
     <>
       {/* Chat Modal (no backdrop - only the widget is shown) */}
       <div
-        className="fixed bottom-24 right-6 w-96 max-h-96 bg-white rounded-lg shadow-2xl flex flex-col z-50 animate-slide-up hidden sm:flex"
+        className="fixed bottom-24 right-6 w-96 max-h-[550px] bg-white rounded-lg shadow-2xl flex flex-col z-50 animate-slide-up hidden sm:flex"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
