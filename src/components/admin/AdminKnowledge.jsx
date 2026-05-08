@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   collection,
   addDoc,
@@ -162,16 +162,34 @@ export const AdminKnowledge = () => {
     }
   };
 
+  const questionInputRef = useRef(null);
+
   // Handle edit
   const handleEdit = (item) => {
     setFormData({
-      question: item.question,
-      answer: item.answer,
-      keywords: (item.keywords || []).join(', '),
+      question: item.question || '',
+      answer: item.answer || '',
+      keywords: Array.isArray(item.keywords)
+        ? item.keywords.join(', ')
+        : typeof item.keywords === 'string'
+        ? item.keywords
+        : '',
       category: item.category || '',
     });
     setEditingId(item.id);
     setError(null);
+
+    // Scroll to top and focus the question input so admin sees the form
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (questionInputRef.current) {
+        try {
+          questionInputRef.current.focus();
+        } catch (e) {
+          // ignore
+        }
+      }
+    }, 200);
   };
 
   // Handle delete
@@ -278,6 +296,7 @@ export const AdminKnowledge = () => {
               Question *
             </label>
             <input
+              ref={questionInputRef}
               type="text"
               name="question"
               value={formData.question}

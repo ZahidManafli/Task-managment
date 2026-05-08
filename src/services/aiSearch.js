@@ -209,3 +209,60 @@ export const initializeAiSearch = async () => {
     console.error('Error initializing AI Search:', error);
   }
 };
+
+/**
+ * Get the current knowledge cache
+ * Used by learning module and other services
+ */
+export const getKnowledgeCache = () => {
+  return knowledgeCache || [];
+};
+
+/**
+ * Add new entry to cache and rebuild Fuse.js index
+ * Called after saving new knowledge from learning feature
+ * Ensures immediate availability of new entries without page reload
+ *
+ * @param {Object} newEntry - New knowledge document with id, question, answer, keywords, category, etc.
+ */
+export const addToCacheAndRebuild = async (newEntry) => {
+  try {
+    if (!newEntry || !newEntry.id) {
+      console.error('Invalid entry for cache update');
+      return;
+    }
+
+    // Normalize the new entry like we do during initial load
+    const normalizedQuestion = normalizeText(newEntry.question || '');
+    const normalizedKeywords = (newEntry.keywords || []).map(normalizeText);
+    const normalizedCategory = normalizeText(newEntry.category || '');
+
+    const normalizedEntry = {
+      id: newEntry.id,
+      question: newEntry.question || '',
+      answer: newEntry.answer || '',
+      keywords: normalizedKeywords,
+      category: newEntry.category || '',
+      searchText: normalizeText(
+        [normalizedQuestion, normalizedKeywords.join(' '), normalizedCategory]
+          .filter(Boolean)
+          .join(' ')
+      ),
+      createdAt: newEntry.createdAt,
+      createdBy: newEntry.createdBy,
+    };
+
+    // Add to cache
+    if (!knowledgeCache) {
+      knowledgeCache = [];
+    }
+    knowledgeCache.push(normalizedEntry);
+
+    // Rebuild Fuse.js index with updated cache
+    initializeFuse(knowledgeCache);
+
+    console.log('Knowledge cache updated and Fuse.js index rebuilt');
+  } catch (error) {
+    console.error('Error updating cache:', error);
+  }
+};

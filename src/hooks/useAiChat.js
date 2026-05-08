@@ -22,6 +22,8 @@ export const useAiChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [conversationId, setConversationId] = useState(null);
+  const [learningTriggered, setLearningTriggered] = useState(false);
+  const [lastUserQuestion, setLastUserQuestion] = useState(null);
 
   const sortMessagesByTimestamp = (items) =>
     items.sort((left, right) => {
@@ -121,6 +123,7 @@ export const useAiChat = () => {
 
       setLoading(true);
       setError(null);
+      setLearningTriggered(false);
 
       try {
         // Create conversation if needed
@@ -150,12 +153,15 @@ export const useAiChat = () => {
         // Search for answer using AI search
         const searchResult = await searchAnswer(userMessage);
 
+        // Detect if learning should be triggered (no match found)
+        const shouldLearn = searchResult === null;
+
         // Create assistant response
         const assistantMsg = {
           role: 'assistant',
           content: searchResult
             ? searchResult.answer
-            : 'No related solution found.',
+            : 'I don\'t have an answer for this yet.',
           timestamp: serverTimestamp(),
           metadata: searchResult
             ? {
@@ -163,7 +169,10 @@ export const useAiChat = () => {
                 score: searchResult.score,
                 knowledgeId: searchResult.id,
               }
-            : null,
+            : {
+                learningTriggered: true,
+                userQuestion: userMessage,
+              },
         };
 
         // Add assistant message to Firestore
@@ -172,6 +181,12 @@ export const useAiChat = () => {
           userId: currentUser.uid,
           ...assistantMsg,
         });
+
+        // If no answer found, trigger learning mode in UI
+        if (shouldLearn) {
+          setLearningTriggered(true);
+          setLastUserQuestion(userMessage);
+        }
       } catch (err) {
         console.error('Error sending message:', err);
         setError('Failed to send message');
@@ -203,6 +218,12 @@ export const useAiChat = () => {
     sendMessage,
     clearHistory,
     conversationId,
+    learningTriggered,
+    lastUserQuestion,
+    resetLearning: () => {
+      setLearningTriggered(false);
+      setLastUserQuestion(null);
+    },
   };
 };
 

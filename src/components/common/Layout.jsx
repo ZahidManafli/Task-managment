@@ -10,7 +10,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const { messages, loading, sendMessage } = useAiChat();
+  const { messages, loading, sendMessage, learningTriggered, lastUserQuestion, resetLearning } = useAiChat();
 
   const handleLogout = async () => {
     await logout();
@@ -107,6 +107,9 @@ const Layout = ({ children, activeTab, onTabChange }) => {
         messages={messages}
         onSendMessage={sendMessage}
         loading={loading}
+        learningTriggered={learningTriggered}
+        lastUserQuestion={lastUserQuestion}
+        resetLearning={resetLearning}
       />
     </div>
   );
