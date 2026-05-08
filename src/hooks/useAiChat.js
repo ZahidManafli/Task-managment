@@ -45,36 +45,50 @@ export const useAiChat = () => {
       where('userId', '==', currentUser.uid)
     );
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      if (!snapshot.empty) {
-        // Use the first (and should be only) conversation
-        const conversationDoc = snapshot.docs[0];
-        const convId = conversationDoc.id;
-        setConversationId(convId);
+    let messagesUnsubscribe = null;
 
-        // Load messages from chat_messages collection
-        const messagesQuery = query(
-          collection(db, 'chat_messages'),
-          where('conversationId', '==', convId)
-        );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      (async () => {
+        if (!snapshot.empty) {
+          // Use the first (and should be only) conversation
+          const conversationDoc = snapshot.docs[0];
+          const convId = conversationDoc.id;
+          setConversationId(convId);
 
-        const messagesSnapshot = await getDocs(messagesQuery);
-        const loadedMessages = sortMessagesByTimestamp(
-          messagesSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-        );
+          // Unsubscribe previous messages listener if any
+          if (messagesUnsubscribe) {
+            messagesUnsubscribe();
+            messagesUnsubscribe = null;
+          }
 
-        setMessages(loadedMessages);
-      } else {
-        // No conversation yet, will be created on first message
-        setConversationId(null);
-        setMessages([]);
-      }
+          // Listen to messages for this conversation in real-time
+          const messagesQuery = query(
+            collection(db, 'chat_messages'),
+            where('conversationId', '==', convId)
+          );
+
+          messagesUnsubscribe = onSnapshot(messagesQuery, (msgSnapshot) => {
+            const loadedMessages = sortMessagesByTimestamp(
+              msgSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+            );
+            setMessages(loadedMessages);
+          });
+        } else {
+          // No conversation yet, will be created on first message
+          setConversationId(null);
+          setMessages([]);
+          if (messagesUnsubscribe) {
+            messagesUnsubscribe();
+            messagesUnsubscribe = null;
+          }
+        }
+      })();
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (messagesUnsubscribe) messagesUnsubscribe();
+    };
   }, [currentUser]);
 
   /**
