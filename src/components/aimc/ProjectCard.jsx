@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import CostFormModal from './CostFormModal';
+import CostDetailModal from './CostDetailModal';
 
 const PROFIT_TARGET_PERCENT = 70;
 
@@ -26,6 +27,7 @@ const formatDate = (value) => {
 
 const ProjectCard = ({ project, onEdit, onDelete, onAddCost, onUpdateCost, onDeleteCost }) => {
   const [costModal, setCostModal] = useState(null); // null = closed, 'new' = add, cost object = edit
+  const [viewingCost, setViewingCost] = useState(null); // cost object being viewed in the detail modal
 
   const revenue = Number(project.revenue) || 0;
   const costs = project.costs || [];
@@ -123,9 +125,9 @@ const ProjectCard = ({ project, onEdit, onDelete, onAddCost, onUpdateCost, onDel
             {costs.map((cost) => (
               <li
                 key={cost.id}
-                onClick={() => setCostModal(cost)}
+                onClick={() => setViewingCost(cost)}
                 className="flex justify-between items-center text-xs bg-gray-50 rounded px-2 py-1 cursor-pointer hover:bg-gray-100 transition-colors"
-                title="Click to edit cost"
+                title="Click to view cost"
               >
                 <div className="truncate mr-2">
                   <span className="font-medium text-gray-800">{cost.title}</span>
@@ -151,6 +153,17 @@ const ProjectCard = ({ project, onEdit, onDelete, onAddCost, onUpdateCost, onDel
           </ul>
         )}
       </div>
+
+      {viewingCost && (
+        <CostDetailModal
+          cost={viewingCost}
+          onClose={() => setViewingCost(null)}
+          onEdit={() => {
+            setCostModal(viewingCost);
+            setViewingCost(null);
+          }}
+        />
+      )}
 
       {costModal && (
         <CostFormModal
