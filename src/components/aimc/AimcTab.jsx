@@ -19,7 +19,7 @@ const AimcTab = () => {
   const { isAdmin, currentUser } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [projectModal, setProjectModal] = useState(null); // null = closed, 'new' = create, project object = edit
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -44,15 +44,22 @@ const AimcTab = () => {
     );
   }
 
-  const handleCreateProject = async (projectData) => {
-    await addDoc(collection(db, 'aimcProjects'), {
-      ...projectData,
-      costs: [],
-      createdBy: currentUser?.email || null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    setShowProjectForm(false);
+  const handleSubmitProject = async (projectData) => {
+    if (projectModal && projectModal !== 'new') {
+      await updateDoc(doc(db, 'aimcProjects', projectModal.id), {
+        ...projectData,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await addDoc(collection(db, 'aimcProjects'), {
+        ...projectData,
+        costs: [],
+        createdBy: currentUser?.email || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    setProjectModal(null);
   };
 
   const handleDeleteProject = async (projectId) => {
@@ -70,6 +77,18 @@ const AimcTab = () => {
     };
     await updateDoc(doc(db, 'aimcProjects', project.id), {
       costs: [...(project.costs || []), newCost],
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const handleUpdateCost = async (project, costId, costData) => {
+    const updatedCosts = (project.costs || []).map((c) =>
+      c.id === costId
+        ? { ...c, title: costData.title, description: costData.description, value: costData.value }
+        : c
+    );
+    await updateDoc(doc(db, 'aimcProjects', project.id), {
+      costs: updatedCosts,
       updatedAt: serverTimestamp(),
     });
   };
@@ -92,7 +111,7 @@ const AimcTab = () => {
           </p>
         </div>
         <button
-          onClick={() => setShowProjectForm(true)}
+          onClick={() => setProjectModal('new')}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
           + Create Project
@@ -114,18 +133,21 @@ const AimcTab = () => {
             <ProjectCard
               key={project.id}
               project={project}
+              onEdit={() => setProjectModal(project)}
               onDelete={() => handleDeleteProject(project.id)}
               onAddCost={(costData) => handleAddCost(project, costData)}
+              onUpdateCost={(costId, costData) => handleUpdateCost(project, costId, costData)}
               onDeleteCost={(costId) => handleDeleteCost(project, costId)}
             />
           ))}
         </div>
       )}
 
-      {showProjectForm && (
+      {projectModal && (
         <ProjectFormModal
-          onClose={() => setShowProjectForm(false)}
-          onSubmit={handleCreateProject}
+          initialData={projectModal === 'new' ? null : projectModal}
+          onClose={() => setProjectModal(null)}
+          onSubmit={handleSubmitProject}
         />
       )}
     </div>

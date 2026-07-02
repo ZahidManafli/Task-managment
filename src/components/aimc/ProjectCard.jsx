@@ -24,8 +24,8 @@ const formatDate = (value) => {
   });
 };
 
-const ProjectCard = ({ project, onDelete, onAddCost, onDeleteCost }) => {
-  const [showCostForm, setShowCostForm] = useState(false);
+const ProjectCard = ({ project, onEdit, onDelete, onAddCost, onUpdateCost, onDeleteCost }) => {
+  const [costModal, setCostModal] = useState(null); // null = closed, 'new' = add, cost object = edit
 
   const revenue = Number(project.revenue) || 0;
   const costs = project.costs || [];
@@ -39,15 +39,26 @@ const ProjectCard = ({ project, onDelete, onAddCost, onDeleteCost }) => {
     <div className="bg-white/90 rounded-2xl border border-slate-200 p-4 hover:shadow-xl transition-all">
       <div className="flex items-start justify-between mb-2 gap-3">
         <h3 className="text-lg font-semibold text-slate-900">{project.title}</h3>
-        <button
-          onClick={onDelete}
-          className="p-1 text-red-600 hover:bg-red-50 rounded transition flex-shrink-0"
-          title="Delete project"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={onEdit}
+            className="p-1 text-blue-600 hover:bg-blue-50 rounded transition"
+            title="Edit project"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-1 text-red-600 hover:bg-red-50 rounded transition"
+            title="Delete project"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {project.description && (
@@ -96,7 +107,7 @@ const ProjectCard = ({ project, onDelete, onAddCost, onDeleteCost }) => {
         <div className="flex justify-between items-center mb-2">
           <h4 className="text-sm font-semibold text-gray-700">Costs ({costs.length})</h4>
           <button
-            onClick={() => setShowCostForm(true)}
+            onClick={() => setCostModal('new')}
             className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
           >
             + Add Cost
@@ -110,7 +121,9 @@ const ProjectCard = ({ project, onDelete, onAddCost, onDeleteCost }) => {
             {costs.map((cost) => (
               <li
                 key={cost.id}
-                className="flex justify-between items-center text-xs bg-gray-50 rounded px-2 py-1"
+                onClick={() => setCostModal(cost)}
+                className="flex justify-between items-center text-xs bg-gray-50 rounded px-2 py-1 cursor-pointer hover:bg-gray-100 transition-colors"
+                title="Click to edit cost"
               >
                 <div className="truncate mr-2">
                   <span className="font-medium text-gray-800">{cost.title}</span>
@@ -121,7 +134,10 @@ const ProjectCard = ({ project, onDelete, onAddCost, onDeleteCost }) => {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-gray-700">{formatAzn(cost.value)}</span>
                   <button
-                    onClick={() => onDeleteCost(cost.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteCost(cost.id);
+                    }}
                     className="text-red-500 hover:text-red-700"
                     title="Remove cost"
                   >
@@ -134,12 +150,17 @@ const ProjectCard = ({ project, onDelete, onAddCost, onDeleteCost }) => {
         )}
       </div>
 
-      {showCostForm && (
+      {costModal && (
         <CostFormModal
-          onClose={() => setShowCostForm(false)}
+          initialData={costModal === 'new' ? null : costModal}
+          onClose={() => setCostModal(null)}
           onSubmit={(costData) => {
-            onAddCost(costData);
-            setShowCostForm(false);
+            if (costModal !== 'new') {
+              onUpdateCost(costModal.id, costData);
+            } else {
+              onAddCost(costData);
+            }
+            setCostModal(null);
           }}
         />
       )}
