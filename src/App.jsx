@@ -20,6 +20,7 @@ import ComputerForm from './components/computers/ComputerForm';
 import ComputerDetailModal from './components/computers/ComputerDetailModal';
 import ComputerAssignModal from './components/computers/ComputerAssignModal';
 import AdminKnowledge from './components/admin/AdminKnowledge';
+import AimcTab from './components/aimc/AimcTab';
 import { TASK_STATUSES, getStockStatusValue, isKatricTypeName } from './utils/constants';
 // Firebase imports
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -1562,6 +1563,8 @@ const Dashboard = () => {
           )}
         </div>
       )}
+
+      {activeTab === 'aimc' && isAdmin && <AimcTab />}
     </Layout>
   );
 };

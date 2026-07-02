@@ -23,6 +23,7 @@ const Layout = ({ children, activeTab, onTabChange }) => {
     { id: 'documents', label: 'Documents' },
     { id: 'stock', label: 'Stock' },
     { id: 'computers', label: 'Computers' },
+    ...(isAdmin ? [{ id: 'aimc', label: 'AİMC' }] : []),
   ];
 
   return (
