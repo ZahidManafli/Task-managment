@@ -34,6 +34,8 @@ const ProjectCard = ({ project, onEdit, onDelete, onAddCost, onUpdateCost, onDel
   const profitPercent = revenue > 0 ? (profit / revenue) * 100 : 0;
   const costPercent = revenue > 0 ? (totalCosts / revenue) * 100 : 0;
   const meetsTarget = profitPercent >= PROFIT_TARGET_PERCENT;
+  const targetProfit = revenue * (PROFIT_TARGET_PERCENT / 100);
+  const targetDiff = profit - targetProfit;
 
   return (
     <div className="bg-white/90 rounded-2xl border border-slate-200 p-4 hover:shadow-xl transition-all">
@@ -99,8 +101,8 @@ const ProjectCard = ({ project, onEdit, onDelete, onAddCost, onUpdateCost, onDel
         }`}
       >
         {meetsTarget
-          ? `Meets ${PROFIT_TARGET_PERCENT}% profit target`
-          : `Below ${PROFIT_TARGET_PERCENT}% profit target`}
+          ? `+${formatAzn(targetDiff)} above the ${PROFIT_TARGET_PERCENT}% target`
+          : `${formatAzn(Math.abs(targetDiff))} short of the ${PROFIT_TARGET_PERCENT}% target`}
       </div>
 
       <div className="border-t border-gray-100 pt-3">
