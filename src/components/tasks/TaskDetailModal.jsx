@@ -9,6 +9,7 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete, users = [] }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState(task);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const canDelete = typeof onDelete === 'function';
 
   const handleUpdate = (updates) => {
@@ -117,7 +118,8 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete, users = [] }) => {
                         key={index}
                         src={img.url || img.preview}
                         alt={`Attachment ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                        onClick={() => setPreviewImage(img.url || img.preview)}
+                        className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition"
                       />
                     ))}
                   </div>
@@ -265,6 +267,29 @@ const TaskDetailModal = ({ task, onClose, onUpdate, onDelete, users = [] }) => {
                     Delete
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {previewImage && (
+            <div
+              className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4"
+              onClick={() => setPreviewImage(null)}
+            >
+              <div className="relative max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="absolute -top-10 right-0 text-white hover:text-gray-300 transition"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <img
+                  src={previewImage}
+                  alt="Attachment preview"
+                  className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                />
               </div>
             </div>
           )}
